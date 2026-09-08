@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Input Data Santri</title>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div class="container mx-auto p-6 max-w-3xl">
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">Form Input Data Santri</h1>
+                <a href="index.html" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 transition">Lihat Data (Index)</a>
+            </div>
+
+            <form id="santriForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Nama Santri</label>
+                    <input type="text" id="nama" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Masukkan nama santri">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Alamat</label>
+                    <textarea id="alamat" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Masukkan alamat"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Denda (Rp)</label>
+                    <input type="number" id="denda" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Contoh: 50000">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Tanggal Pulang</label>
+                        <input type="date" id="pulang" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Lama Izin / Keterangan Waktu</label>
+                        <input type="text" id="izin" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Contoh: 3 Hari">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Tanggal Balik</label>
+                        <input type="date" id="balik" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Status (Kabur / Izin)</label>
+                        <select id="kaburIzin" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <option value="Izin">Izin</option>
+                            <option value="Kabur">Kabur</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Keterangan (KET)</label>
+                    <input type="text" id="ket" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Keterangan tambahan...">
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-green-600 text-white font-medium py-2 rounded hover:bg-green-700 transition">Simpan Data Santri</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').catch((err) => console.log('Gagal daftar SW:', err));
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+        });
+
+        // Supabase Config (Sudah diisi otomatis)
+        const SUPABASE_URL = 'https://jrwesltacmbvhpkygfca.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_spoWuAXY2joni9IM1gSfAA_WJs0QS5A';
+        
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.getElementById('santriForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+
+            const statusVal = document.getElementById('kaburIzin').value;
+            const namaVal = document.getElementById('nama').value;
+
+            const newData = {
+                nama: namaVal,
+                alamat: document.getElementById('alamat').value,
+                denda: parseInt(document.getElementById('denda').value) || 0,
+                pulang: document.getElementById('pulang').value,
+                izin: document.getElementById('izin').value,
+                balik: document.getElementById('balik').value || '-',
+                kabur_izin: statusVal,
+                ket: document.getElementById('ket').value || '-'
+            };
+
+            const { error } = await _supabase.from('santri').insert([newData]);
+
+            if (error) {
+                alert('Gagal menyimpan data: ' + error.message);
+            } else {
+                alert('Data santri berhasil disimpan!');
+                
+                if (Notification.permission === "granted") {
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        registration.showNotification("Data Santri Baru Tersimpan", {
+                            body: `${namaVal} tercatat dengan status: ${statusVal}`,
+                            icon: "icon.png"
+                        });
+                    });
+                }
+
+                document.getElementById('santriForm').reset();
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data Santri';
+        });
+    </script>
+</body>
+</html>
