@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Santri Pulang / Kabur</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        .bg-mesh {
+            background-color: #f6f7fb;
+            background-image:
+                radial-gradient(at 10% 0%, rgba(99,102,241,0.10) 0px, transparent 50%),
+                radial-gradient(at 90% 10%, rgba(217,70,239,0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        .scrollbar-thin::-webkit-scrollbar { height: 8px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    </style>
+</head>
+<body class="bg-mesh min-h-screen text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur border-b border-slate-200/70 sticky top-0 z-10">
+        <div class="container mx-auto px-4 sm:px-6 py-4 max-w-7xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/30 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight truncate">Data Santri Pulang / Kabur</h1>
+                    <p class="text-xs text-slate-500">Halaman publik &middot; hanya lihat data</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-500 shrink-0">
+                <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-slate-300" title="Status realtime"></span>
+                <span id="statusText" class="hidden sm:inline">Menghubungkan...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto p-4 sm:p-6 max-w-7xl space-y-6">
+
+        <!-- Stat cards -->
+        <div class="grid grid-cols-3 gap-3 sm:gap-4">
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Total Santri</p>
+                <p id="statTotal" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Izin</p>
+                <p id="statIzin" class="text-2xl sm:text-3xl font-extrabold text-sky-600 mt-1">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Kabur</p>
+                <p id="statKabur" class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1">0</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <h2 class="text-base sm:text-lg font-bold text-slate-800">Daftar Data Santri</h2>
+                <div class="relative w-full sm:w-64">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="searchInput" type="text" placeholder="Cari nama atau alamat..." class="w-full border border-slate-200 bg-slate-50 rounded-xl pl-9 pr-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                </div>
+            </div>
+
+            <!-- Desktop table -->
+            <div class="hidden md:block overflow-x-auto scrollbar-thin rounded-xl border border-slate-100">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                            <th class="p-3 font-semibold">No</th>
+                            <th class="p-3 font-semibold">Nama</th>
+                            <th class="p-3 font-semibold">Alamat</th>
+                            <th class="p-3 font-semibold">Denda (Rp)</th>
+                            <th class="p-3 font-semibold">Status Bayar</th>
+                            <th class="p-3 font-semibold">Pulang</th>
+                            <th class="p-3 font-semibold">Izin</th>
+                            <th class="p-3 font-semibold">Balik</th>
+                            <th class="p-3 font-semibold">Kabur/Izin</th>
+                            <th class="p-3 font-semibold">Ket</th>
+                        </tr>
+                    </thead>
+                    <tbody id="santriTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+
+            <!-- Mobile cards -->
+            <div id="santriCardList" class="md:hidden space-y-3"></div>
+
+            <div id="emptyMessage" class="text-center py-10 text-slate-400 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mx-auto mb-2 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                <p id="emptyMessageText">Belum ada data santri yang tersimpan.</p>
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-slate-400 pb-4">
+            <a href="admin/login.html" class="hover:text-indigo-600 font-medium transition">Masuk sebagai Admin</a>
+        </p>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+        });
+
+        // Konfigurasi Supabase.
+        // Kunci "anon" ini AMAN untuk dipublikasikan di kode client-side -
+        // keamanan data sebenarnya diatur oleh Row Level Security (RLS) di sisi
+        // server Supabase, BUKAN dengan menyembunyikan kunci ini.
+        // Lihat file supabase-setup.sql untuk kebijakan RLS yang wajib diaktifkan
+        // agar tabel "santri" hanya bisa DIBACA dari sini, dan hanya bisa
+        // diubah/dihapus oleh admin yang sudah login.
+        const SUPABASE_URL = 'https://jrwesltacmbvhpkygfca.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_spoWuAXY2joni9IM1gSfAA_WJs0QS5A';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allSantriData = [];
+
+        function fmtDenda(denda) {
+            const hasDenda = denda && denda > 0;
+            return hasDenda
+                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(denda)
+                : null;
+        }
+
+        function bayarBadgeHtml(santri, hasDenda) {
+            if (!hasDenda) return '<span class="text-slate-300 text-xs">-</span>';
+            return santri.lunas
+                ? '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Sudah Bayar</span>'
+                : '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Belum Bayar</span>';
+        }
+
+        function statusBadgeHtml(kaburIzin) {
+            if (!kaburIzin) return '<span class="text-slate-300 text-xs">-</span>';
+            const badgeColor = kaburIzin === 'Kabur' ? 'bg-rose-100 text-rose-700' : 'bg-sky-100 text-sky-700';
+            return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${kaburIzin}</span>`;
+        }
+
+        function updateStats(list) {
+            document.getElementById('statTotal').textContent = list.length;
+            document.getElementById('statIzin').textContent = list.filter(s => s.kabur_izin === 'Izin').length;
+            document.getElementById('statKabur').textContent = list.filter(s => s.kabur_izin === 'Kabur').length;
+        }
+
+        function render(list) {
+            const tbody = document.getElementById('santriTableBody');
+            const cardList = document.getElementById('santriCardList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const emptyText = document.getElementById('emptyMessageText');
+
+            tbody.innerHTML = '';
+            cardList.innerHTML = '';
+
+            if (!list || list.length === 0) {
+                emptyText.textContent = allSantriData.length === 0
+                    ? 'Belum ada data santri yang tersimpan.'
+                    : 'Tidak ada data yang cocok dengan pencarian.';
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+            emptyMessage.classList.add('hidden');
+
+            list.forEach((santri, index) => {
+                const formattedDenda = fmtDenda(santri.denda);
+                const hasDenda = !!formattedDenda;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+                tr.innerHTML = `
+                    <td class="p-3 text-center text-slate-400">${index + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800">${santri.nama}</td>
+                    <td class="p-3 text-slate-600">${santri.alamat || '<span class="text-slate-300">-</span>'}</td>
+                    <td class="p-3 text-slate-600">${formattedDenda || '<span class="text-slate-300">-</span>'}</td>
+                    <td class="p-3">${bayarBadgeHtml(santri, hasDenda)}</td>
+                    <td class="p-3 text-slate-600">${santri.pulang || '<span class="text-slate-300">-</span>'}</td>
+                    <td class="p-3 text-slate-600">${santri.izin || '<span class="text-slate-300">-</span>'}</td>
+                    <td class="p-3 text-slate-600">${santri.balik || '<span class="text-slate-300">-</span>'}</td>
+                    <td class="p-3">${statusBadgeHtml(santri.kabur_izin)}</td>
+                    <td class="p-3 text-slate-600">${santri.ket || '<span class="text-slate-300">-</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+
+                const card = document.createElement('div');
+                card.className = 'rounded-2xl border border-slate-100 p-4 space-y-2.5';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="font-bold text-slate-800">${santri.nama}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${santri.alamat || '<span class="text-slate-300">Alamat belum diisi</span>'}</p>
+                        </div>
+                        ${statusBadgeHtml(santri.kabur_izin)}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Denda</p>
+                            <p class="font-semibold text-slate-700">${formattedDenda || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Status Bayar</p>
+                            <div class="mt-0.5">${bayarBadgeHtml(santri, hasDenda)}</div>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Pulang</p>
+                            <p class="font-semibold text-slate-700">${santri.pulang || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Balik</p>
+                            <p class="font-semibold text-slate-700">${santri.balik || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2 col-span-2">
+                            <p class="text-slate-400">Izin</p>
+                            <p class="font-semibold text-slate-700">${santri.izin || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2 col-span-2">
+                            <p class="text-slate-400">Keterangan</p>
+                            <p class="font-semibold text-slate-700">${santri.ket || '-'}</p>
+                        </div>
+                    </div>
+                `;
+                cardList.appendChild(card);
+            });
+        }
+
+        function applyFilter() {
+            const q = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!q) { render(allSantriData); return; }
+            const filtered = allSantriData.filter(s =>
+                (s.nama || '').toLowerCase().includes(q) ||
+                (s.alamat || '').toLowerCase().includes(q)
+            );
+            render(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilter);
+
+        async function loadData() {
+            const tbody = document.getElementById('santriTableBody');
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center p-6 text-slate-400">Memuat data...</td></tr>';
+
+            const { data: santriList, error } = await _supabase
+                .from('santri')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                tbody.innerHTML = '';
+                document.getElementById('emptyMessageText').textContent = 'Gagal memuat data: ' + error.message;
+                document.getElementById('emptyMessage').classList.remove('hidden');
+                return;
+            }
+
+            allSantriData = santriList || [];
+            updateStats(allSantriData);
+            applyFilter();
+        }
+
+        // Realtime listener - client hanya mendengarkan perubahan, tidak bisa menulis.
+        _supabase
+            .channel('public:santri')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'santri' }, payload => {
+                loadData();
+                if (payload.eventType === 'INSERT' && Notification.permission === "granted") {
+                    navigator.serviceWorker.ready.then(function (registration) {
+                        registration.showNotification("Ada Data Santri Masuk!", {
+                            body: `${payload.new.nama} (${payload.new.kabur_izin || 'belum ditentukan'})`,
+                            icon: "icon.png"
+                        });
+                    });
+                }
+            })
+            .subscribe((status) => {
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                dot.classList.remove('bg-slate-300', 'bg-emerald-500', 'bg-rose-500');
+                dot.classList.add(status === 'SUBSCRIBED' ? 'bg-emerald-500' : 'bg-rose-500');
+                text.textContent = status === 'SUBSCRIBED' ? 'Live' : 'Terputus';
+            });
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
