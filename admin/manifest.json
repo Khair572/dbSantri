@@ -1,0 +1,15 @@
+{
+  "name": "Admin - Data Santri",
+  "short_name": "Admin Santri",
+  "start_url": "login.html",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
