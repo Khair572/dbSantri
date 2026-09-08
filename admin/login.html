@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin - Data Santri</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div class="min-h-screen flex items-center justify-center p-6">
+        <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
+            <h1 class="text-xl font-bold text-gray-800 mb-1">Login Admin</h1>
+            <p class="text-sm text-gray-500 mb-6">Masuk untuk mengelola data santri.</p>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1 text-sm">Email</label>
+                    <input type="email" id="email" required autocomplete="username"
+                        class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="admin@contoh.com">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1 text-sm">Kata Sandi</label>
+                    <input type="password" id="password" required autocomplete="current-password"
+                        class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                </div>
+                <p id="errorMsg" class="text-sm text-red-600 hidden"></p>
+                <button type="submit" id="loginBtn"
+                    class="w-full bg-blue-600 text-white font-medium py-2 rounded hover:bg-blue-700 transition">Masuk</button>
+            </form>
+
+            <p class="text-center text-xs text-gray-400 mt-6">
+                <a href="../index.html" class="hover:underline">Kembali ke halaman data</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://jrwesltacmbvhpkygfca.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_spoWuAXY2joni9IM1gSfAA_WJs0QS5A';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Jika sudah login, langsung lempar ke admin.html
+        _supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) window.location.href = 'admin.html';
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.classList.add('hidden');
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const { error } = await _supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                errorMsg.textContent = 'Login gagal: ' + error.message;
+                errorMsg.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Masuk';
+            } else {
+                window.location.href = 'admin.html';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Data Santri</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div id="app" class="hidden">
+        <div class="container mx-auto p-6 max-w-5xl space-y-6">
+
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Panel Admin - Data Santri</h1>
+                    <p id="userEmail" class="text-sm text-gray-500"></p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="../index.html" class="bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-300 transition">Lihat Data</a>
+                    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition">Keluar</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-8">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Input Data Santri</h2>
+                <form id="santriForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Nama Santri</label>
+                        <input type="text" id="nama" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Masukkan nama santri">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Alamat</label>
+                        <textarea id="alamat" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Masukkan alamat"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Denda (Rp) <span class="font-normal text-gray-400">(opsional)</span></label>
+                        <input type="number" id="denda" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Kosongkan jika tidak ada denda">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1">Tanggal Pulang</label>
+                            <input type="date" id="pulang" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1">Lama Izin / Keterangan Waktu</label>
+                            <input type="text" id="izin" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Contoh: 3 Hari">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1">Tanggal Balik</label>
+                            <input type="date" id="balik" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1">Status (Kabur / Izin)</label>
+                            <select id="kaburIzin" required class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                <option value="Izin">Izin</option>
+                                <option value="Kabur">Kabur</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Keterangan (KET)</label>
+                        <input type="text" id="ket" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Keterangan tambahan...">
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="w-full bg-green-600 text-white font-medium py-2 rounded hover:bg-green-700 transition">Simpan Data Santri</button>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Data Tersimpan</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-200 text-left text-sm">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-700 uppercase text-xs">
+                                <th class="border border-gray-300 p-3">No</th>
+                                <th class="border border-gray-300 p-3">Nama</th>
+                                <th class="border border-gray-300 p-3">Alamat</th>
+                                <th class="border border-gray-300 p-3">Denda (Rp)</th>
+                                <th class="border border-gray-300 p-3">Status Bayar</th>
+                                <th class="border border-gray-300 p-3">Pulang</th>
+                                <th class="border border-gray-300 p-3">Izin</th>
+                                <th class="border border-gray-300 p-3">Balik</th>
+                                <th class="border border-gray-300 p-3">Kabur/Izin</th>
+                                <th class="border border-gray-300 p-3">Ket</th>
+                                <th class="border border-gray-300 p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="santriTableBody" class="text-gray-700"></tbody>
+                    </table>
+                </div>
+                <div id="emptyMessage" class="text-center py-6 text-gray-500 hidden">Belum ada data santri yang tersimpan.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="checkingAuth" class="min-h-screen flex items-center justify-center text-gray-500">Memeriksa sesi login...</div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').catch((err) => console.log('Gagal daftar SW:', err));
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+        });
+
+        // Konfigurasi Supabase.
+        // Kunci "anon" ini aman dipublikasikan; akses tulis/hapus tabel "santri"
+        // dibatasi oleh Row Level Security (lihat supabase-setup.sql) sehingga
+        // hanya pengguna yang SUDAH LOGIN (lewat halaman ini) yang bisa
+        // menambah atau menghapus data.
+        const SUPABASE_URL = 'https://jrwesltacmbvhpkygfca.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_spoWuAXY2joni9IM1gSfAA_WJs0QS5A';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- Auth guard ---
+        async function requireSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return session;
+        }
+
+        _supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                window.location.href = 'login.html';
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await _supabase.auth.signOut();
+            window.location.href = 'login.html';
+        });
+
+        // --- Form input ---
+        document.getElementById('santriForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+
+            const statusVal = document.getElementById('kaburIzin').value;
+            const namaVal = document.getElementById('nama').value;
+
+            const newData = {
+                nama: namaVal,
+                alamat: document.getElementById('alamat').value,
+                denda: parseInt(document.getElementById('denda').value) || 0,
+                pulang: document.getElementById('pulang').value,
+                izin: document.getElementById('izin').value,
+                balik: document.getElementById('balik').value || '-',
+                kabur_izin: statusVal,
+                ket: document.getElementById('ket').value || '-',
+                lunas: false
+            };
+
+            const { error } = await _supabase.from('santri').insert([newData]);
+
+            if (error) {
+                alert('Gagal menyimpan data: ' + error.message);
+            } else {
+                alert('Data santri berhasil disimpan!');
+
+                if (Notification.permission === "granted") {
+                    navigator.serviceWorker.ready.then(function (registration) {
+                        registration.showNotification("Data Santri Baru Tersimpan", {
+                            body: `${namaVal} tercatat dengan status: ${statusVal}`,
+                            icon: "icon.png"
+                        });
+                    });
+                }
+
+                document.getElementById('santriForm').reset();
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data Santri';
+        });
+
+        // --- Tabel data + hapus ---
+        async function loadData() {
+            const tbody = document.getElementById('santriTableBody');
+            const emptyMessage = document.getElementById('emptyMessage');
+
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center p-4">Memuat data...</td></tr>';
+
+            const { data: santriList, error } = await _supabase
+                .from('santri')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                tbody.innerHTML = '';
+                emptyMessage.textContent = 'Gagal memuat data: ' + error.message;
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            if (!santriList || santriList.length === 0) {
+                emptyMessage.textContent = 'Belum ada data santri yang tersimpan.';
+                emptyMessage.classList.remove('hidden');
+                return;
+            } else {
+                emptyMessage.classList.add('hidden');
+            }
+
+            santriList.forEach((santri, index) => {
+                const hasDenda = santri.denda && santri.denda > 0;
+                const formattedDenda = hasDenda
+                    ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(santri.denda)
+                    : '-';
+                const badgeColor = santri.kabur_izin === 'Kabur' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700';
+
+                let bayarCell;
+                if (!hasDenda) {
+                    bayarCell = '<span class="text-gray-400 text-xs">-</span>';
+                } else if (santri.lunas) {
+                    bayarCell = `
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700 mr-1">Sudah Bayar</span>
+                        <button onclick="setLunas(${santri.id}, false)" class="text-xs text-gray-400 hover:text-gray-600 underline">Tandai belum</button>
+                    `;
+                } else {
+                    bayarCell = `
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-yellow-100 text-yellow-700 mr-1">Belum Bayar</span>
+                        <button onclick="setLunas(${santri.id}, true)" class="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition">Tandai Lunas</button>
+                    `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <th class="border border-gray-300 p-3 text-center">${index + 1}</th>
+                    <td class="border border-gray-300 p-3 font-medium">${santri.nama}</td>
+                    <td class="border border-gray-300 p-3">${santri.alamat}</td>
+                    <td class="border border-gray-300 p-3">${formattedDenda}</td>
+                    <td class="border border-gray-300 p-3 whitespace-nowrap">${bayarCell}</td>
+                    <td class="border border-gray-300 p-3">${santri.pulang}</td>
+                    <td class="border border-gray-300 p-3">${santri.izin}</td>
+                    <td class="border border-gray-300 p-3">${santri.balik}</td>
+                    <td class="border border-gray-300 p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${badgeColor}">${santri.kabur_izin}</span></td>
+                    <td class="border border-gray-300 p-3">${santri.ket}</td>
+                    <td class="border border-gray-300 p-3 text-center">
+                        <button onclick="deleteData(${santri.id})" class="bg-red-500 text-white px-2.5 py-1 rounded text-xs hover:bg-red-600 transition">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function setLunas(id, lunasValue) {
+            const { error } = await _supabase.from('santri').update({ lunas: lunasValue }).eq('id', id);
+            if (error) {
+                alert('Gagal mengubah status bayar: ' + error.message);
+            } else {
+                loadData();
+            }
+        }
+
+        async function deleteData(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                const { error } = await _supabase.from('santri').delete().eq('id', id);
+                if (error) {
+                    alert('Gagal menghapus data: ' + error.message);
+                } else {
+                    loadData();
+                }
+            }
+        }
+
+        _supabase
+            .channel('public:santri:admin')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'santri' }, () => loadData())
+            .subscribe();
+
+        // --- Init ---
+        (async function init() {
+            const session = await requireSession();
+            if (!session) return;
+
+            document.getElementById('userEmail').textContent = session.user.email;
+            document.getElementById('checkingAuth').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            loadData();
+        })();
+    </script>
+</body>
+</html>
