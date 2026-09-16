@@ -38,7 +38,7 @@
 
     <div class="container mx-auto p-4 sm:p-6 max-w-7xl space-y-6">
 
-        <!-- Stat cards -->
+
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
                 <p class="text-xs sm:text-sm text-slate-500 font-medium">Total Santri</p>
@@ -58,7 +58,7 @@
             </div>
         </div>
 
-        <!-- Hitung Denda berdasarkan Nama -->
+      
         <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 sm:p-6">
             <div class="flex items-center gap-2 mb-4">
                 <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
@@ -106,7 +106,7 @@
             </div>
 
 
-            <!-- Desktop table -->
+           
             <div class="hidden md:block overflow-x-auto scrollbar-thin rounded-xl border border-slate-100">
                 <table class="w-full text-left text-sm border-collapse">
                     <thead>
@@ -141,7 +141,7 @@
         </p>
     </div>
 
-    <!-- Toast container -->
+   
     <div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 items-end"></div>
 
     <script>
@@ -155,13 +155,7 @@
             }
         });
 
-        // Konfigurasi Supabase.
-        // Kunci "anon" ini AMAN untuk dipublikasikan di kode client-side -
-        // keamanan data sebenarnya diatur oleh Row Level Security (RLS) di sisi
-        // server Supabase, BUKAN dengan menyembunyikan kunci ini.
-        // Lihat file supabase-setup.sql untuk kebijakan RLS yang wajib diaktifkan
-        // agar tabel "santri" hanya bisa DIBACA dari sini, dan hanya bisa
-        // diubah/dihapus oleh admin yang sudah login.
+    
         const SUPABASE_URL = 'https://jrwesltacmbvhpkygfca.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_spoWuAXY2joni9IM1gSfAA_WJs0QS5A';
 
@@ -170,7 +164,7 @@
 
         let allSantriData = [];
 
-        // --- Toast helper ---
+     
         function toast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const colors = {
@@ -190,7 +184,7 @@
             }, 3200);
         }
 
-        // --- Download CSV (cadangan data, biar tidak hilang/diubah tanpa jejak) ---
+        
         function downloadCSV() {
             if (!allSantriData || allSantriData.length === 0) {
                 toast('Tidak ada data untuk diunduh.', 'error');
@@ -346,7 +340,7 @@
             });
         }
 
-        // --- Urutkan data ---
+       
         function sortData(list) {
             const sortBy = document.getElementById('sortSelect').value;
             if (sortBy === 'default') return list;
@@ -401,10 +395,7 @@
             render(sortData(filtered));
         }
 
-        // --- Hitung denda (rumus sama seperti tombol "Pindai" di panel admin) ---
-        //  - Kabur      : jumlah hari (Pulang s.d. Balik) x Rp30.000
-        //  - Izin lebih : jumlah hari kelebihan dari lama izin (angka pada field "Izin", mis. "3 Hari") x Rp10.000
-        //  - Izin tidak lebih dari batas: tidak ada denda
+   
         function hitungRincianDenda(santri) {
             if (!santri.pulang || !santri.balik) {
                 return { denda: null, rincian: 'Tanggal Pulang / Balik belum diisi, denda belum bisa dihitung.' };
@@ -436,7 +427,7 @@
             return { denda: 0, rincian: `Izin ${hariIzin} hari, tidak melebihi batas. Tidak ada denda.` };
         }
 
-        // --- Hitung Denda berdasarkan Nama (termasuk total jika nama muncul lebih dari satu) ---
+    
         function hitungDenda() {
             const q = document.getElementById('hitungNamaInput').value.trim().toLowerCase();
             const resultBox = document.getElementById('hitungDendaResult');
@@ -546,7 +537,7 @@
             applyFilter();
         }
 
-        // Realtime listener - client hanya mendengarkan perubahan, tidak bisa menulis.
+       
         _supabase
             .channel('public:santri')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'santri' }, payload => {
