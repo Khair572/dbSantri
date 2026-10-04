@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Santri Pulang / Kabur</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .scrollbar-thin::-webkit-scrollbar { height: 8px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .toast-anim { animation: toast-in .25s ease-out; }
+        summary { list-style: none; } summary::-webkit-details-marker { display: none; }
+        details[open] > summary .chev { transform: rotate(180deg); }
+    </style>
+    <script src="theme.js"></script>
+    <script src="santri-utils.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <header class="bg-white border-b border-slate-200/70 sticky top-0 z-10">
+        <div class="container mx-auto px-4 sm:px-6 py-4 max-w-7xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-sm flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight sm:truncate">Data Santri Pulang / Kabur</h1>
+                    <p class="hidden sm:block text-xs text-slate-500">Halaman publik &middot; hanya lihat data</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-slate-300" title="Status realtime"></span>
+                <span id="statusText" class="hidden md:inline text-xs text-slate-500">Menghubungkan...</span>
+                <button type="button" data-theme-toggle class="theme-toggle" aria-label="Ganti ke mode malam" title="Ganti ke mode malam" aria-pressed="false">
+                    <svg class="theme-icon-moon w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+                    <svg class="theme-icon-sun w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+                </button>
+                <a href="admin/login.html" class="inline-flex items-center gap-1.5 bg-indigo-600 text-white px-3.5 h-10 rounded-xl text-sm font-semibold hover:bg-indigo-500 active:scale-[0.98] transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span class="sm:hidden">Admin</span><span class="hidden sm:inline">Masuk sebagai Admin</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto p-4 sm:p-6 max-w-7xl space-y-6">
+
+
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Total Santri</p>
+                <p id="statTotal" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Izin</p>
+                <p id="statIzin" class="text-2xl sm:text-3xl font-extrabold text-sky-600 mt-1">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Kabur</p>
+                <p id="statKabur" class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Belum Kembali</p>
+                <p id="statBelumKembali" class="text-2xl sm:text-3xl font-extrabold text-violet-600 mt-1">0</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5 col-span-2 sm:col-span-1">
+                <p class="text-xs sm:text-sm text-slate-500 font-medium">Uang Terkumpul</p>
+                <p id="statTerkumpul" class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1">Rp0</p>
+            </div>
+        </div>
+
+      
+        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 sm:p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7h6M9 11h6M9 15h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
+                </div>
+                <h2 class="text-base sm:text-lg font-bold text-slate-800">Hitung Denda Berdasarkan Nama</h2>
+            </div>
+            <p class="text-xs text-slate-400 -mt-2 mb-4">Denda dihitung otomatis dari tanggal Pulang s.d. Balik (kedua tanggal ikut dihitung): Kabur Rp30.000/hari, Izin lebih hari Rp10.000/hari kelebihan. Jika belum kembali, dihitung sementara sampai hari ini.</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input id="hitungNamaInput" type="text" placeholder="Masukkan nama santri..." class="flex-1 border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                <button id="hitungDendaBtn" class="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md hover:from-indigo-500 hover:to-violet-500 active:scale-[0.99] transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                    Hitung Denda
+                </button>
+            </div>
+            <div id="hitungDendaResult" class="mt-4 space-y-3"></div>
+        </div>
+
+
+        <details id="rekapCard" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5">
+            <summary class="flex items-center justify-between gap-3 p-5 sm:p-6 cursor-pointer select-none">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800">Rekap Per Santri</h2>
+                </div>
+                <svg class="chev w-5 h-5 text-slate-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="px-5 sm:px-6 pb-5 sm:pb-6">
+                <p class="text-xs text-slate-400 mb-3">Catatan dengan nama yang sama digabung, diurutkan dari sisa denda terbesar.</p>
+                <label class="inline-flex items-center gap-2 text-sm text-slate-600 mb-3 cursor-pointer">
+                    <input type="checkbox" id="rekapHanyaSisa" checked class="rounded accent-indigo-600"> Hanya yang masih ada sisa denda
+                </label>
+                <div class="overflow-x-auto scrollbar-thin rounded-xl border border-slate-100">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                                <th class="p-3 font-semibold">Nama</th>
+                                <th class="p-3 font-semibold text-center">Catatan</th>
+                                <th class="p-3 font-semibold">Denda</th>
+                                <th class="p-3 font-semibold">Terbayar</th>
+                                <th class="p-3 font-semibold">Sisa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rekapBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <p id="rekapEmpty" class="hidden text-center text-sm text-slate-400 py-6"></p>
+                <p id="rekapTotal" class="text-xs text-slate-500 mt-3"></p>
+            </div>
+        </details>
+
+        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <h2 class="text-base sm:text-lg font-bold text-slate-800">Daftar Data Santri</h2>
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-56">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input id="searchInput" type="text" placeholder="Cari nama atau alamat..." class="w-full border border-slate-200 bg-slate-50 rounded-xl pl-9 pr-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+                    <div class="relative w-full sm:w-52">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10"/><path d="M11 9h7"/><path d="M11 13h4"/><path d="m3 17 3 3 3-3"/><path d="M6 18V4"/></svg>
+                        <select id="sortSelect" class="w-full border border-slate-200 bg-slate-50 rounded-xl pl-9 pr-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition appearance-none">
+                            <option value="default">Urutan Default (Terbaru Input)</option>
+                            <option value="pulang_terbaru">Tanggal Pulang (Terbaru)</option>
+                            <option value="pulang_terlama">Tanggal Pulang (Terlama)</option>
+                            <option value="belum_bayar">Status Bayar: Belum Bayar dulu</option>
+                            <option value="sudah_bayar">Status Bayar: Sudah Bayar dulu</option>
+                            <option value="kabur">Status: Kabur dulu</option>
+                            <option value="izin">Status: Izin dulu</option>
+                            <option value="sisa">Sisa denda terbesar</option>
+                            <option value="belum_kembali">Belum kembali dulu</option>
+                        </select>
+                    </div>
+                    <button id="downloadCsvBtn" title="Unduh seluruh data sebagai file CSV untuk cadangan" class="shrink-0 inline-flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 px-3.5 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-100 active:scale-[0.98] transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download CSV
+                    </button>
+                </div>
+            </div>
+
+
+           
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                <select id="filterStatus" aria-label="Filter kondisi" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    <option value="">Semua kondisi</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Kabur">Kabur</option>
+                    <option value="belum_kembali">Belum kembali</option>
+                </select>
+                <select id="filterBayar" aria-label="Filter status bayar" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    <option value="">Semua status bayar</option>
+                    <option value="belum_lunas">Belum lunas</option>
+                    <option value="belum">Belum bayar</option>
+                    <option value="sebagian">Sebagian</option>
+                    <option value="lunas">Sudah bayar</option>
+                    <option value="tanpa">Tanpa denda</option>
+                </select>
+                <select id="filterBulan" aria-label="Filter bulan pulang" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    <option value="">Semua bulan</option>
+                </select>
+                <button id="resetFilterBtn" type="button" class="hidden w-full bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-200 transition">Reset filter</button>
+            </div>
+            <p id="resultInfo" class="text-xs text-slate-400 mb-3"></p>
+
+            <div class="hidden md:block overflow-x-auto scrollbar-thin rounded-xl border border-slate-100">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                            <th class="p-3 font-semibold">No</th>
+                            <th class="p-3 font-semibold">Nama</th>
+                            <th class="p-3 font-semibold">Alamat</th>
+                            <th class="p-3 font-semibold">Denda (Rp)</th>
+                            <th class="p-3 font-semibold">Status Bayar</th>
+                            <th class="p-3 font-semibold">Pulang</th>
+                            <th class="p-3 font-semibold">Izin</th>
+                            <th class="p-3 font-semibold">Balik</th>
+                            <th class="p-3 font-semibold">Kabur/Izin</th>
+                            <th class="p-3 font-semibold">Ket</th>
+                        </tr>
+                    </thead>
+                    <tbody id="santriTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+
+            <!-- Mobile cards -->
+            <div id="santriCardList" class="md:hidden space-y-3"></div>
+
+            <div id="loadMoreWrap" class="hidden mt-4 text-center">
+                <button id="loadMoreBtn" type="button" class="inline-flex items-center justify-center bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-100 active:scale-[0.98] transition"></button>
+            </div>
+
+            <div id="emptyMessage" class="text-center py-10 text-slate-400 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mx-auto mb-2 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                <p id="emptyMessageText">Belum ada data santri yang tersimpan.</p>
+            </div>
+        </div>
+    </div>
+
+   
+    <div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 items-end"></div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+        });
+
+    
+        const SUPABASE_URL = 'https://jrwesltacmbvhpkygfca.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_spoWuAXY2joni9IM1gSfAA_WJs0QS5A';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allSantriData = [];
+        const PAGE = 20;
+        let visibleCount = PAGE;
+
+        const esc = SU.esc;
+        const dash = (h) => h || '<span class="text-slate-300">-</span>';
+
+        function toast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const colors = {
+                success: 'bg-emerald-600',
+                error: 'bg-rose-600',
+                info: 'bg-slate-800'
+            };
+            const el = document.createElement('div');
+            el.className = `toast-anim ${colors[type] || colors.success} text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg max-w-xs sm:max-w-sm`;
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.transition = 'opacity .3s, transform .3s';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-6px)';
+                setTimeout(() => el.remove(), 300);
+            }, 3200);
+        }
+
+        // --- Download CSV (seluruh data, tanggal tetap format YYYY-MM-DD agar mudah diolah) ---
+        function downloadCSV() {
+            if (!allSantriData || allSantriData.length === 0) {
+                toast('Tidak ada data untuk diunduh.', 'error');
+                return;
+            }
+
+            const headers = ['No', 'Nama', 'Alamat', 'Denda (Rp)', 'Terbayar (Rp)', 'Sisa (Rp)', 'Status Bayar', 'Tgl Lunas', 'Pulang', 'Izin', 'Balik', 'Kabur/Izin', 'Keterangan'];
+            const labelBayar = { none: '', belum: 'Belum Bayar', sebagian: 'Sebagian', lunas: 'Sudah Bayar' };
+
+            const escapeCsv = (val) => {
+                const str = String(val ?? '');
+                return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+            };
+
+            const rows = allSantriData.map((s, i) => {
+                const b = SU.bayarInfo(s);
+                return [
+                    i + 1,
+                    s.nama || '',
+                    s.alamat || '',
+                    s.denda || '',
+                    b.terbayar || '',
+                    b.sisa || '',
+                    labelBayar[b.status],
+                    s.tgl_lunas || '',
+                    s.pulang || '',
+                    s.izin || '',
+                    s.balik || '',
+                    s.kabur_izin || '',
+                    s.ket || ''
+                ];
+            });
+
+            const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\r\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data-santri-${SU.toISO(SU.hariIni())}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast(`Data berhasil diunduh (${allSantriData.length} baris).`);
+        }
+
+        document.getElementById('downloadCsvBtn').addEventListener('click', downloadCSV);
+
+        function updateStats(list) {
+            const st = SU.statistik(list);
+            document.getElementById('statTotal').textContent = st.total;
+            document.getElementById('statIzin').textContent = st.izin;
+            document.getElementById('statKabur').textContent = st.kabur;
+            document.getElementById('statBelumKembali').textContent = st.belumKembali;
+            document.getElementById('statTerkumpul').textContent = SU.rp(st.terkumpul);
+        }
+
+        function render(list) {
+            const tbody = document.getElementById('santriTableBody');
+            const cardList = document.getElementById('santriCardList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const emptyText = document.getElementById('emptyMessageText');
+            const loadMoreWrap = document.getElementById('loadMoreWrap');
+
+            tbody.innerHTML = '';
+            cardList.innerHTML = '';
+            loadMoreWrap.classList.add('hidden');
+
+            if (!list || list.length === 0) {
+                emptyText.textContent = allSantriData.length === 0
+                    ? 'Belum ada data santri yang tersimpan.'
+                    : 'Tidak ada data yang cocok dengan pencarian atau filter.';
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+            emptyMessage.classList.add('hidden');
+
+            list.slice(0, visibleCount).forEach((santri, index) => {
+                const denda = santri.denda > 0 ? SU.rp(santri.denda) : null;
+                const bayar = SU.bayarBadge(santri) + SU.bayarDetail(santri);
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+                tr.innerHTML = `
+                    <td class="p-3 text-center text-slate-400">${index + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800">${esc(santri.nama)}</td>
+                    <td class="p-3 text-slate-600">${dash(esc(santri.alamat))}</td>
+                    <td class="p-3 text-slate-600 whitespace-nowrap">${dash(denda)}</td>
+                    <td class="p-3">${bayar}</td>
+                    <td class="p-3 text-slate-600 whitespace-nowrap">${dash(esc(SU.fmtTgl(santri.pulang)))}</td>
+                    <td class="p-3 text-slate-600">${dash(esc(santri.izin))}</td>
+                    <td class="p-3 text-slate-600">${SU.balikHtml(santri)}</td>
+                    <td class="p-3">${SU.statusBadge(santri.kabur_izin)}</td>
+                    <td class="p-3 text-slate-600">${dash(esc(santri.ket))}</td>
+                `;
+                tbody.appendChild(tr);
+
+                const card = document.createElement('div');
+                card.className = 'rounded-2xl border border-slate-100 p-4 space-y-2.5';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="font-bold text-slate-800">${esc(santri.nama)}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${esc(santri.alamat) || '<span class="text-slate-300">Alamat belum diisi</span>'}</p>
+                        </div>
+                        ${SU.statusBadge(santri.kabur_izin)}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Denda</p>
+                            <p class="font-semibold text-slate-700">${denda || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Status Bayar</p>
+                            <div class="mt-0.5">${bayar}</div>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Pulang</p>
+                            <p class="font-semibold text-slate-700">${esc(SU.fmtTgl(santri.pulang)) || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Balik</p>
+                            <div class="font-semibold text-slate-700">${SU.balikHtml(santri)}</div>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2 col-span-2">
+                            <p class="text-slate-400">Izin</p>
+                            <p class="font-semibold text-slate-700">${esc(santri.izin) || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2 col-span-2">
+                            <p class="text-slate-400">Keterangan</p>
+                            <p class="font-semibold text-slate-700">${esc(santri.ket) || '-'}</p>
+                        </div>
+                    </div>
+                `;
+                cardList.appendChild(card);
+            });
+
+            if (list.length > visibleCount) {
+                document.getElementById('loadMoreBtn').textContent = `Muat lebih banyak (${list.length - visibleCount} lagi)`;
+                loadMoreWrap.classList.remove('hidden');
+            }
+        }
+
+        function sortData(list) {
+            const sortBy = document.getElementById('sortSelect').value;
+            if (sortBy === 'default') return list;
+
+            const sorted = [...list];
+            const tgl = (s) => SU.parseTgl(s.pulang);
+            const byDate = (dir) => (a, b) => {
+                const x = tgl(a), y = tgl(b);
+                if (!x && !y) return 0;
+                if (!x) return 1;
+                if (!y) return -1;
+                return dir * (x - y);
+            };
+            const bool = (fn) => (a, b) => (fn(b) ? 1 : 0) - (fn(a) ? 1 : 0);
+
+            switch (sortBy) {
+                case 'pulang_terbaru': sorted.sort(byDate(-1)); break;
+                case 'pulang_terlama': sorted.sort(byDate(1)); break;
+                case 'belum_bayar': sorted.sort(bool(s => SU.bayarInfo(s).sisa > 0)); break;
+                case 'sudah_bayar': sorted.sort(bool(s => SU.bayarInfo(s).status === 'lunas')); break;
+                case 'sisa': sorted.sort((a, b) => SU.bayarInfo(b).sisa - SU.bayarInfo(a).sisa); break;
+                case 'belum_kembali': sorted.sort(bool(s => SU.belumKembali(s))); break;
+                case 'kabur': sorted.sort(bool(s => s.kabur_izin === 'Kabur')); break;
+                case 'izin': sorted.sort(bool(s => s.kabur_izin === 'Izin')); break;
+            }
+            return sorted;
+        }
+
+        function currentFilters() {
+            return {
+                q: document.getElementById('searchInput').value,
+                status: document.getElementById('filterStatus').value,
+                bayar: document.getElementById('filterBayar').value,
+                bulan: document.getElementById('filterBulan').value
+            };
+        }
+
+        function applyFilter(reset) {
+            if (reset === true) visibleCount = PAGE;
+            const f = currentFilters();
+            const aktif = !!(f.q.trim() || f.status || f.bayar || f.bulan);
+            const hasil = sortData(SU.filterData(allSantriData, f));
+            render(hasil);
+
+            document.getElementById('resetFilterBtn').classList.toggle('hidden', !aktif);
+            document.getElementById('resultInfo').textContent = allSantriData.length === 0 ? '' :
+                `Menampilkan ${Math.min(visibleCount, hasil.length)} dari ${hasil.length} data` + (aktif ? ` (total ${allSantriData.length})` : '');
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterBayar').value = '';
+            document.getElementById('filterBulan').value = '';
+            applyFilter(true);
+        }
+
+        function fillBulanOptions() {
+            const sel = document.getElementById('filterBulan');
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">Semua bulan</option>' +
+                SU.daftarBulan(allSantriData).map(k => `<option value="${k}">${SU.labelBulan(k)}</option>`).join('');
+            sel.value = [...sel.options].some(o => o.value === cur) ? cur : '';
+        }
+
+        // --- Rekap per santri (nama yang sama digabung) ---
+        function renderRekap() {
+            const hanyaSisa = document.getElementById('rekapHanyaSisa').checked;
+            let rows = SU.rekapSantri(allSantriData);
+            if (hanyaSisa) rows = rows.filter(r => r.sisa > 0);
+
+            const body = document.getElementById('rekapBody');
+            const empty = document.getElementById('rekapEmpty');
+            const total = document.getElementById('rekapTotal');
+
+            body.innerHTML = rows.map(r => `
+                <tr>
+                    <td class="p-3 font-semibold text-slate-800">${esc(r.nama)}${r.belumKembali ? `<span class="block text-[11px] font-normal text-slate-400">${r.belumKembali} catatan belum kembali</span>` : ''}</td>
+                    <td class="p-3 text-center text-slate-600">${r.catatan}</td>
+                    <td class="p-3 text-slate-600 whitespace-nowrap">${SU.rp(r.denda)}</td>
+                    <td class="p-3 text-emerald-600 whitespace-nowrap">${SU.rp(r.terbayar)}</td>
+                    <td class="p-3 font-semibold whitespace-nowrap ${r.sisa > 0 ? 'text-rose-600' : 'text-slate-400'}">${SU.rp(r.sisa)}</td>
+                </tr>`).join('');
+
+            empty.classList.toggle('hidden', rows.length > 0);
+            empty.textContent = allSantriData.length === 0 ? 'Belum ada data.' : 'Tidak ada santri dengan sisa denda.';
+            const sisa = rows.reduce((t, r) => t + r.sisa, 0);
+            total.textContent = rows.length ? `${rows.length} santri · total sisa denda ${SU.rp(sisa)}` : '';
+        }
+        document.getElementById('rekapHanyaSisa').addEventListener('change', renderRekap);
+
+        // --- Hitung denda berdasarkan nama ---
+        function hitungDenda() {
+            const raw = document.getElementById('hitungNamaInput').value.trim();
+            const resultBox = document.getElementById('hitungDendaResult');
+
+            if (!raw) {
+                resultBox.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">Masukkan nama santri terlebih dahulu.</p>';
+                return;
+            }
+
+            const matches = allSantriData.filter(s => SU.norm(s.nama).includes(SU.norm(raw)));
+
+            if (matches.length === 0) {
+                resultBox.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">Tidak ditemukan santri dengan nama "<span class="font-semibold text-slate-500">${esc(raw)}</span>".</p>`;
+                return;
+            }
+
+            let totalDenda = 0;
+            let totalSisa = 0;
+            let belumBisaDihitung = 0;
+
+            const cardsHtml = matches.map(santri => {
+                const r = SU.hitungOtomatis(santri);
+                const b = SU.bayarInfo(santri);
+                if (r.ok) totalDenda += r.denda; else belumBisaDihitung++;
+                totalSisa += b.sisa;
+
+                const dendaBlock = r.ok
+                    ? `<p class="text-2xl font-extrabold text-rose-600">${SU.rp(r.denda)}</p>`
+                    : `<p class="text-lg font-bold text-slate-300">Belum bisa dihitung</p>`;
+
+                const tercatat = b.denda > 0 ? `
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2"><p class="text-slate-400">Tercatat</p><p class="font-semibold text-slate-700">${SU.rp(b.denda)}</p></div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2"><p class="text-slate-400">Terbayar</p><p class="font-semibold text-emerald-600">${SU.rp(b.terbayar)}</p></div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2"><p class="text-slate-400">Sisa</p><p class="font-semibold ${b.sisa > 0 ? 'text-rose-600' : 'text-slate-700'}">${SU.rp(b.sisa)}</p></div>
+                    </div>
+                    ${r.ok && !r.sementara && r.denda !== b.denda ? '<p class="text-[11px] text-amber-600">Hasil hitung berbeda dengan denda yang tercatat di data.</p>' : ''}` : '';
+
+                return `
+                    <div class="rounded-2xl border border-slate-100 p-4 sm:p-5 space-y-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="font-bold text-slate-800 text-base">${esc(santri.nama)}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">${esc(santri.alamat) || '<span class="text-slate-300">Alamat belum diisi</span>'}</p>
+                            </div>
+                            ${SU.statusBadge(santri.kabur_izin)}
+                        </div>
+                        <div class="flex items-end justify-between gap-2 flex-wrap">
+                            <div>
+                                <p class="text-xs text-slate-400">${r.sementara ? 'Denda Sementara' : 'Jumlah Denda'}</p>
+                                ${dendaBlock}
+                            </div>
+                            <div class="text-right">${SU.bayarBadge(santri)}${SU.bayarDetail(santri)}</div>
+                        </div>
+                        <p class="text-xs text-slate-500 bg-slate-50 rounded-lg px-2.5 py-2">${esc(r.rincian)}</p>
+                        ${tercatat}
+                        <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
+                            <div class="pt-2">
+                                <p class="text-slate-400">Pulang</p>
+                                <p class="font-semibold text-slate-700">${esc(SU.fmtTgl(santri.pulang)) || '-'}</p>
+                            </div>
+                            <div class="pt-2">
+                                <p class="text-slate-400">Balik</p>
+                                <p class="font-semibold text-slate-700">${esc(SU.fmtTgl(santri.balik)) || 'Belum kembali'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            let totalHtml = '';
+            if (matches.length > 1) {
+                totalHtml = `
+                    <div class="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white p-4 sm:p-5">
+                        <p class="text-xs text-indigo-100 font-medium">Total Denda &middot; ${matches.length} data cocok dengan "${esc(raw)}"</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold mt-0.5">${SU.rp(totalDenda)}</p>
+                        <p class="text-xs text-indigo-100 mt-1">Sisa yang belum dibayar (menurut data tercatat): ${SU.rp(totalSisa)}</p>
+                        ${belumBisaDihitung > 0 ? `<p class="text-[11px] text-indigo-100 mt-1">*${belumBisaDihitung} data belum bisa dihitung (tanggal/status belum lengkap) &amp; tidak termasuk dalam total.</p>` : ''}
+                    </div>
+                `;
+            }
+
+            resultBox.innerHTML = totalHtml + cardsHtml;
+        }
+
+        document.getElementById('hitungDendaBtn').addEventListener('click', hitungDenda);
+        document.getElementById('hitungNamaInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') hitungDenda();
+        });
+
+        document.getElementById('searchInput').addEventListener('input', () => applyFilter(true));
+        ['sortSelect', 'filterStatus', 'filterBayar', 'filterBulan'].forEach(id =>
+            document.getElementById(id).addEventListener('change', () => applyFilter(true)));
+        document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+            visibleCount += PAGE;
+            applyFilter();
+        });
+
+        async function loadData() {
+            const tbody = document.getElementById('santriTableBody');
+            if (allSantriData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center p-6 text-slate-400">Memuat data...</td></tr>';
+            }
+
+            const { data: santriList, error } = await _supabase
+                .from('santri')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                tbody.innerHTML = '';
+                document.getElementById('emptyMessageText').textContent = 'Gagal memuat data: ' + error.message;
+                document.getElementById('emptyMessage').classList.remove('hidden');
+                return;
+            }
+
+            allSantriData = santriList || [];
+            updateStats(allSantriData);
+            fillBulanOptions();
+            renderRekap();
+            applyFilter();
+        }
+
+
+        _supabase
+            .channel('public:santri')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'santri' }, payload => {
+                loadData();
+                if (payload.eventType === 'INSERT' && Notification.permission === "granted") {
+                    navigator.serviceWorker.ready.then(function (registration) {
+                        registration.showNotification("Ada Data Santri Masuk!", {
+                            body: `${payload.new.nama} (${payload.new.kabur_izin || 'belum ditentukan'})`,
+                            icon: "icon.png"
+                        });
+                    });
+                }
+            })
+            .subscribe((status) => {
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                dot.classList.remove('bg-slate-300', 'bg-emerald-500', 'bg-rose-500');
+                dot.classList.add(status === 'SUBSCRIBED' ? 'bg-emerald-500' : 'bg-rose-500');
+                text.textContent = status === 'SUBSCRIBED' ? 'Live' : 'Terputus';
+            });
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
