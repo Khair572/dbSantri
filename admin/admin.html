@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Data Santri</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .toast-anim { animation: toast-in .25s ease-out; }
+        @keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .modal-anim { animation: modal-in .2s ease-out; }
+        summary { list-style: none; } summary::-webkit-details-marker { display: none; }
+        details[open] > summary .chev { transform: rotate(180deg); }
+    </style>
+    <script src="../theme.js"></script>
+    <script src="../santri-utils.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <div id="app" class="hidden">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200/70 sticky top-0 z-30">
+            <div class="container mx-auto px-4 sm:px-6 py-4 max-w-6xl flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-sm flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight truncate">Panel Admin Data Santri</h1>
+                        <p id="userEmail" class="text-xs text-slate-500 truncate"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" data-theme-toggle class="theme-toggle" aria-label="Ganti ke mode malam" title="Ganti ke mode malam" aria-pressed="false">
+                    <svg class="theme-icon-moon w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+                    <svg class="theme-icon-sun w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+                </button>
+                    <a href="../index.html" class="hidden sm:inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3.5 py-2 rounded-xl text-sm font-medium hover:bg-slate-200 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Lihat Data
+                    </a>
+                    <button id="logoutBtn" class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-600 px-3.5 py-2 rounded-xl text-sm font-medium hover:bg-rose-100 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span class="hidden sm:inline">Keluar</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="container mx-auto p-4 sm:p-6 max-w-6xl space-y-6">
+
+            <!-- Stat cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Total Santri</p>
+                    <p id="statTotal" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1">0</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Status Izin</p>
+                    <p id="statIzin" class="text-2xl sm:text-3xl font-extrabold text-sky-600 mt-1">0</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Status Kabur</p>
+                    <p id="statKabur" class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1">0</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Belum Kembali</p>
+                    <p id="statBelumKembali" class="text-2xl sm:text-3xl font-extrabold text-violet-600 mt-1">0</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Belum Lunas</p>
+                    <p id="statBelumBayar" class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">0</p>
+                    <p id="statSisa" class="text-[11px] text-slate-400 mt-0.5">Sisa Rp0</p>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-4 sm:p-5 col-span-2 sm:col-span-1">
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Uang Terkumpul</p>
+                    <p id="statTerkumpul" class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1">Rp0</p>
+                </div>
+            </div>
+
+            <div id="payInfoBanner" class="hidden bg-amber-100 text-amber-700 rounded-2xl px-4 py-3 text-sm">
+                Pencatatan cicilan belum aktif. Jalankan bagian <b>PEMBARUAN 2</b> di <code>supabase-setup.sql</code> lewat Supabase SQL Editor. Sementara itu status bayar tetap bisa ditandai lunas atau belum.
+            </div>
+
+            <!-- Form input -->
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 sm:p-8">
+                <div class="flex items-center gap-2 mb-5">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800">Input Data Santri</h2>
+                </div>
+                <p class="text-xs text-slate-400 -mt-3 mb-5">Hanya <span class="font-semibold text-slate-500">Nama Santri</span> yang wajib diisi — field lain boleh dikosongkan.</p>
+                <form id="santriForm" class="space-y-4">
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Nama Santri <span class="text-rose-500">*</span></label>
+                        <input type="text" id="nama" required class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Masukkan nama santri">
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Alamat <span class="font-normal text-slate-400">(opsional)</span></label>
+                        <textarea id="alamat" rows="2" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Masukkan alamat"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Denda (Rp) <span class="font-normal text-slate-400">(opsional)</span></label>
+                        <div class="flex gap-2">
+                            <input type="number" id="denda" class="flex-1 min-w-0 border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Kosongkan jika tidak ada denda">
+                            <button type="button" onclick="pindaiDenda('')" title="Hitung otomatis dari tanggal Pulang, Balik & status" class="shrink-0 inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-100 active:scale-[0.98] transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                                Pindai
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1.5">Pindai = hitung otomatis dari Pulang s.d. Balik (dihitung inklusif, kedua tanggal ikut terhitung). Kabur: Rp30.000/hari. Izin lebih hari: Rp10.000/hari kelebihan.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Tanggal Pulang <span class="font-normal text-slate-400">(opsional)</span></label>
+                            <input type="date" id="pulang" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Lama Izin / Keterangan Waktu <span class="font-normal text-slate-400">(opsional)</span></label>
+                            <input type="text" id="izin" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Contoh: 3 Hari">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Tanggal Balik <span class="font-normal text-slate-400">(opsional)</span></label>
+                            <input type="date" id="balik" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Status (Kabur / Izin) <span class="font-normal text-slate-400">(opsional)</span></label>
+                            <select id="kaburIzin" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                                <option value="">Belum ditentukan</option>
+                                <option value="Izin">Izin</option>
+                                <option value="Kabur">Kabur</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Keterangan (KET) <span class="font-normal text-slate-400">(opsional)</span></label>
+                        <input type="text" id="ket" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Keterangan tambahan...">
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold py-2.5 rounded-xl shadow-sm hover:shadow-md hover:from-indigo-500 hover:to-violet-500 active:scale-[0.99] transition-all">Simpan Data Santri</button>
+                </form>
+            </div>
+
+            <details id="rekapBulanCard" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5">
+                <summary class="flex items-center justify-between gap-3 p-5 sm:p-6 cursor-pointer select-none">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-800">Uang Masuk per Bulan</h2>
+                    </div>
+                    <svg class="chev w-5 h-5 text-slate-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="px-5 sm:px-6 pb-5 sm:pb-6">
+                    <p class="text-xs text-slate-400 mb-4">Dihitung dari tanggal bayar pada riwayat pembayaran. Pembayaran lama yang hanya ditandai lunas (tanpa tanggal) tidak ikut terhitung di sini.</p>
+                    <div id="rekapBulanBody" class="space-y-4"></div>
+                    <p id="rekapBulanEmpty" class="hidden text-center text-sm text-slate-400 py-6"></p>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mt-4">
+                        <p id="rekapBulanTotal" class="text-xs text-slate-500"></p>
+                        <button id="downloadBayarCsvBtn" type="button" class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3.5 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-100 active:scale-[0.98] transition">Download riwayat bayar (CSV)</button>
+                    </div>
+                </div>
+            </details>
+
+            <details id="rekapCard" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5">
+                <summary class="flex items-center justify-between gap-3 p-5 sm:p-6 cursor-pointer select-none">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-800">Rekap Per Santri</h2>
+                    </div>
+                    <svg class="chev w-5 h-5 text-slate-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="px-5 sm:px-6 pb-5 sm:pb-6">
+                    <p class="text-xs text-slate-400 mb-3">Catatan dengan nama yang sama digabung, diurutkan dari sisa denda terbesar.</p>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-600 mb-3 cursor-pointer">
+                        <input type="checkbox" id="rekapHanyaSisa" checked class="rounded accent-indigo-600"> Hanya yang masih ada sisa denda
+                    </label>
+                    <div class="overflow-x-auto scrollbar-thin rounded-xl border border-slate-100">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                                    <th class="p-3 font-semibold">Nama</th>
+                                    <th class="p-3 font-semibold text-center">Catatan</th>
+                                    <th class="p-3 font-semibold">Denda</th>
+                                    <th class="p-3 font-semibold">Terbayar</th>
+                                    <th class="p-3 font-semibold">Sisa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rekapBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <p id="rekapEmpty" class="hidden text-center text-sm text-slate-400 py-6"></p>
+                    <p id="rekapTotal" class="text-xs text-slate-500 mt-3"></p>
+                </div>
+            </details>
+
+            <!-- Data table -->
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800">Data Tersimpan</h2>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-56">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input id="searchInput" type="text" placeholder="Cari nama atau alamat..." class="w-full border border-slate-200 bg-slate-50 rounded-xl pl-9 pr-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+                        <div class="relative w-full sm:w-52">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10"/><path d="M11 9h7"/><path d="M11 13h4"/><path d="m3 17 3 3 3-3"/><path d="M6 18V4"/></svg>
+                            <select id="sortSelect" class="w-full border border-slate-200 bg-slate-50 rounded-xl pl-9 pr-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition appearance-none">
+                                <option value="default">Urutan Default (Terbaru Input)</option>
+                                <option value="pulang_terbaru">Tanggal Pulang (Terbaru)</option>
+                                <option value="pulang_terlama">Tanggal Pulang (Terlama)</option>
+                                <option value="belum_bayar">Status Bayar: Belum Bayar dulu</option>
+                                <option value="sudah_bayar">Status Bayar: Sudah Bayar dulu</option>
+                                <option value="kabur">Status: Kabur dulu</option>
+                                <option value="izin">Status: Izin dulu</option>
+                                <option value="sisa">Sisa denda terbesar</option>
+                                <option value="belum_kembali">Belum kembali dulu</option>
+                            </select>
+                        </div>
+                        <button id="downloadCsvBtn" title="Unduh seluruh data sebagai file CSV untuk cadangan" class="shrink-0 inline-flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 px-3.5 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-100 active:scale-[0.98] transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download CSV
+                        </button>
+                    </div>
+                </div>
+
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                    <select id="filterStatus" aria-label="Filter kondisi" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        <option value="">Semua kondisi</option>
+                        <option value="Izin">Izin</option>
+                        <option value="Kabur">Kabur</option>
+                        <option value="belum_kembali">Belum kembali</option>
+                    </select>
+                    <select id="filterBayar" aria-label="Filter status bayar" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        <option value="">Semua status bayar</option>
+                        <option value="belum_lunas">Belum lunas</option>
+                        <option value="belum">Belum bayar</option>
+                        <option value="sebagian">Sebagian</option>
+                        <option value="lunas">Sudah bayar</option>
+                        <option value="tanpa">Tanpa denda</option>
+                    </select>
+                    <select id="filterBulan" aria-label="Filter bulan pulang" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        <option value="">Semua bulan</option>
+                    </select>
+                    <button id="resetFilterBtn" type="button" class="hidden w-full bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-200 transition">Reset filter</button>
+                </div>
+                <p id="resultInfo" class="text-xs text-slate-400 mb-3"></p>
+
+                <!-- Desktop table -->
+                <div class="hidden md:block overflow-x-auto scrollbar-thin rounded-xl border border-slate-100">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead class="sticky top-0">
+                            <tr class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                                <th class="p-3 font-semibold">No</th>
+                                <th class="p-3 font-semibold">Nama</th>
+                                <th class="p-3 font-semibold">Alamat</th>
+                                <th class="p-3 font-semibold">Denda</th>
+                                <th class="p-3 font-semibold">Status Bayar</th>
+                                <th class="p-3 font-semibold">Pulang</th>
+                                <th class="p-3 font-semibold">Izin</th>
+                                <th class="p-3 font-semibold">Balik</th>
+                                <th class="p-3 font-semibold">Kabur/Izin</th>
+                                <th class="p-3 font-semibold">Ket</th>
+                                <th class="p-3 font-semibold text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="santriTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile cards -->
+                <div id="santriCardList" class="md:hidden space-y-3"></div>
+
+                <div id="loadMoreWrap" class="hidden mt-4 text-center">
+                    <button id="loadMoreBtn" type="button" class="inline-flex items-center justify-center bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-100 active:scale-[0.98] transition"></button>
+                </div>
+
+                <div id="emptyMessage" class="text-center py-10 text-slate-400 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mx-auto mb-2 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                    <p id="emptyMessageText">Belum ada data santri yang tersimpan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="checkingAuth" class="min-h-screen flex items-center justify-center text-slate-400 gap-2">
+        <svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+        Memeriksa sesi login...
+    </div>
+
+    <!-- Edit modal -->
+    <div id="editModalBackdrop" class="hidden fixed inset-0 bg-slate-900/40 z-40 flex items-end sm:items-center justify-center p-0 sm:p-6">
+        <div class="modal-anim bg-white w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between px-5 sm:px-7 pt-5 sm:pt-6 pb-3 sticky top-0 bg-white border-b border-slate-100">
+                <h3 class="text-base sm:text-lg font-bold text-slate-800">Edit Data Santri</h3>
+                <button id="closeEditModalBtn" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <form id="editForm" class="space-y-4 px-5 sm:px-7 py-5">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Nama Santri <span class="text-rose-500">*</span></label>
+                    <input type="text" id="editNama" required class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Alamat <span class="font-normal text-slate-400">(opsional)</span></label>
+                    <textarea id="editAlamat" rows="2" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Denda (Rp) <span class="font-normal text-slate-400">(opsional)</span></label>
+                    <div class="flex gap-2">
+                        <input type="number" id="editDenda" class="flex-1 min-w-0 border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        <button type="button" onclick="pindaiDenda('edit')" title="Hitung otomatis dari tanggal Pulang, Balik & status" class="shrink-0 inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-100 active:scale-[0.98] transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                            Pindai
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1.5">Pindai = hitung otomatis dari Pulang s.d. Balik (dihitung inklusif, kedua tanggal ikut terhitung). Kabur: Rp30.000/hari. Izin lebih hari: Rp10.000/hari kelebihan.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Tanggal Pulang <span class="font-normal text-slate-400">(opsional)</span></label>
+                        <input type="date" id="editPulang" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Lama Izin <span class="font-normal text-slate-400">(opsional)</span></label>
+                        <input type="text" id="editIzin" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Tanggal Balik <span class="font-normal text-slate-400">(opsional)</span></label>
+                        <input type="date" id="editBalik" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Status <span class="font-normal text-slate-400">(opsional)</span></label>
+                        <select id="editKaburIzin" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                            <option value="">Belum ditentukan</option>
+                            <option value="Izin">Izin</option>
+                            <option value="Kabur">Kabur</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-semibold mb-1.5 text-sm">Keterangan (KET) <span class="font-normal text-slate-400">(opsional)</span></label>
+                    <input type="text" id="editKet" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                </div>
+                <div class="flex gap-3 pt-2 pb-1">
+                    <button type="button" id="cancelEditBtn" class="flex-1 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl hover:bg-slate-200 transition">Batal</button>
+                    <button type="submit" id="editSubmitBtn" class="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment modal -->
+    <div id="payModalBackdrop" class="hidden fixed inset-0 bg-slate-900/40 z-40 flex items-end sm:items-center justify-center p-0 sm:p-6">
+        <div class="modal-anim bg-white w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-7 pt-5 sm:pt-6 pb-3 sticky top-0 bg-white border-b border-slate-100">
+                <div class="min-w-0">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-800">Pembayaran Denda</h3>
+                    <p id="payNama" class="text-xs text-slate-500 truncate"></p>
+                </div>
+                <button id="closePayModalBtn" type="button" aria-label="Tutup" class="w-8 h-8 shrink-0 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="px-5 sm:px-7 py-5 space-y-5">
+                <input type="hidden" id="payId">
+                <div id="paySummary" class="space-y-2.5"></div>
+                <form id="payForm" class="space-y-3">
+                    <div>
+                        <label for="payJumlah" class="block text-slate-700 font-semibold mb-1.5 text-sm">Jumlah dibayar (Rp)</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="payJumlah" min="1" step="1" required class="flex-1 min-w-0 w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Contoh: 20000">
+                            <button type="button" id="payIsiSisaBtn" class="shrink-0 bg-indigo-50 text-indigo-600 px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-100 active:scale-[0.98] transition">Isi sisa</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="payTanggal" class="block text-slate-700 font-semibold mb-1.5 text-sm">Tanggal bayar</label>
+                            <input type="date" id="payTanggal" required class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label for="payCatatan" class="block text-slate-700 font-semibold mb-1.5 text-sm">Catatan <span class="font-normal text-slate-400">(opsional)</span></label>
+                            <input type="text" id="payCatatan" class="w-full border border-slate-200 bg-slate-50 rounded-xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Contoh: dititip ke wali">
+                        </div>
+                    </div>
+                    <button type="submit" id="paySubmitBtn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold py-2.5 rounded-xl shadow-sm hover:shadow-md hover:from-indigo-500 hover:to-violet-500 active:scale-[0.99] disabled:opacity-60 transition-all">Catat pembayaran</button>
+                </form>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800 mb-2">Riwayat pembayaran</h4>
+                    <div id="payHistory" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 items-end"></div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').catch((err) => console.log('Gagal daftar SW:', err));
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+        });
+
+        // Konfigurasi Supabase.
+        // Kunci "anon" ini aman dipublikasikan; akses tulis/hapus tabel "santri"
+        // dibatasi oleh Row Level Security (lihat supabase-setup.sql) sehingga
+        // hanya pengguna yang SUDAH LOGIN (lewat halaman ini) yang bisa
+        // menambah, mengubah, atau menghapus data.
+        const SUPABASE_URL = 'https://jrwesltacmbvhpkygfca.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_spoWuAXY2joni9IM1gSfAA_WJs0QS5A';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allSantriData = [];
+        let allPembayaran = [];
+        let payBySantri = new Map();
+        let payReady = false; // true jika tabel "pembayaran" sudah dibuat (supabase-setup.sql, PEMBARUAN 2)
+        const PAGE = 20;
+        let visibleCount = PAGE;
+
+        const esc = SU.esc;
+        const dash = (h) => h || '<span class="text-slate-300">-</span>';
+        const fmtDenda = (d) => (d > 0 ? SU.rp(d) : null);
+
+        // --- Toast helper ---
+        function toast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const colors = {
+                success: 'bg-emerald-600',
+                error: 'bg-rose-600',
+                info: 'bg-slate-800'
+            };
+            const el = document.createElement('div');
+            el.className = `toast-anim ${colors[type] || colors.success} text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg max-w-xs sm:max-w-sm`;
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.transition = 'opacity .3s, transform .3s';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-6px)';
+                setTimeout(() => el.remove(), 300);
+            }, 3200);
+        }
+
+
+        // --- Auth guard ---
+        async function requireSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return session;
+        }
+
+        _supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                window.location.href = 'login.html';
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await _supabase.auth.signOut();
+            window.location.href = 'login.html';
+        });
+
+        // --- Pindai (hitung otomatis Denda dari Pulang, Balik & status) ---
+        // Aturan:
+        //  - Hari dihitung INKLUSIF: tanggal Pulang & tanggal Balik ikut dihitung.
+        //    Contoh: Pulang tgl 1, Balik tgl 2 -> dihitung 2 hari.
+        //  - Kabur      : jumlah hari (inklusif, Pulang s.d. Balik) x Rp30.000
+        //  - Izin lebih : jumlah hari kelebihan dari lama izin (angka pada field "Izin", mis. "3 Hari") x Rp10.000
+        //  - Izin tidak lebih dari batas: tidak ada denda
+        function pindaiDenda(prefix) {
+            const idPulang = prefix ? 'editPulang' : 'pulang';
+            const idBalik = prefix ? 'editBalik' : 'balik';
+            const idIzin = prefix ? 'editIzin' : 'izin';
+            const idStatus = prefix ? 'editKaburIzin' : 'kaburIzin';
+            const idDenda = prefix ? 'editDenda' : 'denda';
+
+            const pulangVal = document.getElementById(idPulang).value;
+            const balikVal = document.getElementById(idBalik).value;
+            const status = document.getElementById(idStatus).value;
+            const izinText = document.getElementById(idIzin).value || '';
+
+            if (!pulangVal || !balikVal) {
+                toast('Isi tanggal Pulang dan Balik dahulu sebelum memindai.', 'error');
+                return;
+            }
+            if (!status) {
+                toast('Pilih status Kabur/Izin dahulu sebelum memindai.', 'error');
+                return;
+            }
+
+            const pulangDate = new Date(pulangVal);
+            const balikDate = new Date(balikVal);
+            const selisihHari = Math.round((balikDate - pulangDate) / 86400000);
+
+            if (selisihHari < 0) {
+                toast('Tanggal Balik tidak boleh sebelum tanggal Pulang.', 'error');
+                return;
+            }
+
+            // Hitung inklusif (selisih + 1) supaya tanggal Pulang & Balik sama-sama terhitung.
+            // Contoh: Pulang tgl 1, Balik tgl 2 -> selisih 1 hari, totalHari = 2 hari.
+            const totalHari = selisihHari + 1;
+
+            let denda = 0;
+            let info = '';
+
+            if (status === 'Kabur') {
+                denda = totalHari * 30000;
+                info = `Kabur: ${totalHari} hari x Rp30.000 = ${fmtDenda(denda)}`;
+            } else {
+                const match = izinText.match(/\d+/);
+                const hariIzin = match ? parseInt(match[0], 10) : 0;
+                const lebih = totalHari - hariIzin;
+                if (lebih > 0) {
+                    denda = lebih * 10000;
+                    info = `Izin ${hariIzin} hari, telat ${lebih} hari x Rp10.000 = ${fmtDenda(denda)}`;
+                } else {
+                    denda = 0;
+                    info = `Izin ${hariIzin || 0} hari, tidak telat (total ${totalHari} hari). Tidak ada denda.`;
+                }
+            }
+
+            document.getElementById(idDenda).value = denda > 0 ? denda : '';
+            toast(info, denda > 0 ? 'info' : 'success');
+        }
+
+
+        // --- Validasi sebelum simpan ---
+        // Kesalahan fatal menghentikan penyimpanan; peringatan boleh dilanjutkan setelah konfirmasi.
+        function konfirmasiValidasi(data, excludeId) {
+            const v = SU.validasi(data, allSantriData, excludeId);
+            if (v.errors.length) {
+                toast(v.errors[0], 'error');
+                return false;
+            }
+            if (v.warnings.length) {
+                return confirm('Periksa dulu sebelum menyimpan:\n\n• ' + v.warnings.join('\n• ') + '\n\nTetap simpan?');
+            }
+            return true;
+        }
+
+        // Tanggal Balik tidak bisa dipilih lebih awal dari tanggal Pulang
+        function bindTanggalMin(idPulang, idBalik) {
+            const p = document.getElementById(idPulang);
+            const b = document.getElementById(idBalik);
+            const sync = () => { b.min = p.value || ''; };
+            p.addEventListener('change', sync);
+            if (p.form) p.form.addEventListener('reset', () => setTimeout(sync, 0));
+            sync();
+        }
+        bindTanggalMin('pulang', 'balik');
+        bindTanggalMin('editPulang', 'editBalik');
+
+        // --- Form input (tambah data) ---
+        document.getElementById('santriForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+
+            const statusVal = document.getElementById('kaburIzin').value || null;
+            const namaVal = document.getElementById('nama').value.replace(/\s+/g, ' ').trim();
+
+            const newData = {
+                nama: namaVal,
+                alamat: document.getElementById('alamat').value.trim() || null,
+                denda: parseInt(document.getElementById('denda').value) || null,
+                pulang: document.getElementById('pulang').value || null,
+                izin: document.getElementById('izin').value.trim() || null,
+                balik: document.getElementById('balik').value || null,
+                kabur_izin: statusVal,
+                ket: document.getElementById('ket').value.trim() || null,
+                lunas: false
+            };
+
+            if (!konfirmasiValidasi(newData, null)) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+
+            const { error } = await _supabase.from('santri').insert([newData]);
+
+            if (error) {
+                toast('Gagal menyimpan data: ' + error.message, 'error');
+            } else {
+                toast('Data santri berhasil disimpan!');
+
+                if (Notification.permission === "granted") {
+                    navigator.serviceWorker.ready.then(function (registration) {
+                        registration.showNotification("Data Santri Baru Tersimpan", {
+                            body: `${namaVal} tercatat dengan status: ${statusVal || 'belum ditentukan'}`,
+                            icon: "icon.png"
+                        });
+                    });
+                }
+
+                document.getElementById('santriForm').reset();
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data Santri';
+        });
+
+        // --- Status bayar + tombol aksi ---
+        const sumJumlah = (arr) => (arr || []).reduce((t, p) => t + (p.jumlah || 0), 0);
+
+        function bayarActionHtml(s) {
+            const b = SU.bayarInfo(s);
+            if (b.status === 'none') return '';
+            if (payReady) {
+                const lunas = b.status === 'lunas';
+                const cls = lunas ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700';
+                return `<button onclick="openPayModal(${s.id})" class="mt-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg transition ${cls}">${lunas ? 'Riwayat' : 'Catat bayar'}</button>`;
+            }
+            // Cadangan jika tabel pembayaran belum dibuat: tandai lunas / belum seperti sebelumnya
+            return b.status === 'lunas'
+                ? `<button onclick="setLunas(${s.id}, false)" class="mt-1.5 block text-xs text-slate-400 hover:text-slate-600 underline">Tandai belum</button>`
+                : `<button onclick="setLunas(${s.id}, true)" class="mt-1.5 text-xs bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700 transition">Tandai Lunas</button>`;
+        }
+
+        function updateStats(list) {
+            const st = SU.statistik(list);
+            document.getElementById('statTotal').textContent = st.total;
+            document.getElementById('statIzin').textContent = st.izin;
+            document.getElementById('statKabur').textContent = st.kabur;
+            document.getElementById('statBelumKembali').textContent = st.belumKembali;
+            document.getElementById('statBelumBayar').textContent = st.belumLunas;
+            document.getElementById('statSisa').textContent = 'Sisa ' + SU.rp(list.reduce((t, s) => t + SU.bayarInfo(s).sisa, 0));
+            document.getElementById('statTerkumpul').textContent = SU.rp(st.terkumpul);
+        }
+
+        // --- Render tabel + kartu ---
+        const ICON_EDIT = '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/>';
+        const ICON_TRASH = '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>';
+        const svg = (inner, size) => `<svg xmlns="http://www.w3.org/2000/svg" class="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+
+        function render(list) {
+            const tbody = document.getElementById('santriTableBody');
+            const cardList = document.getElementById('santriCardList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const emptyText = document.getElementById('emptyMessageText');
+            const loadMoreWrap = document.getElementById('loadMoreWrap');
+
+            tbody.innerHTML = '';
+            cardList.innerHTML = '';
+            loadMoreWrap.classList.add('hidden');
+
+            if (!list || list.length === 0) {
+                emptyText.textContent = allSantriData.length === 0
+                    ? 'Belum ada data santri yang tersimpan.'
+                    : 'Tidak ada data yang cocok dengan pencarian atau filter.';
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+            emptyMessage.classList.add('hidden');
+
+            list.slice(0, visibleCount).forEach((santri, index) => {
+                const denda = fmtDenda(santri.denda);
+                const bayar = SU.bayarBadge(santri) + SU.bayarDetail(santri) + '<div>' + bayarActionHtml(santri) + '</div>';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+                tr.innerHTML = `
+                    <td class="p-3 text-center text-slate-400">${index + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800">${esc(santri.nama)}</td>
+                    <td class="p-3 text-slate-600">${dash(esc(santri.alamat))}</td>
+                    <td class="p-3 text-slate-600 whitespace-nowrap">${dash(denda)}</td>
+                    <td class="p-3 whitespace-nowrap">${bayar}</td>
+                    <td class="p-3 text-slate-600 whitespace-nowrap">${dash(esc(SU.fmtTgl(santri.pulang)))}</td>
+                    <td class="p-3 text-slate-600">${dash(esc(santri.izin))}</td>
+                    <td class="p-3 text-slate-600">${SU.balikHtml(santri)}</td>
+                    <td class="p-3">${SU.statusBadge(santri.kabur_izin)}</td>
+                    <td class="p-3 text-slate-600">${dash(esc(santri.ket))}</td>
+                    <td class="p-3">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openEditModal(${santri.id})" title="Edit" class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition">${svg(ICON_EDIT, 'w-4 h-4')}</button>
+                            <button onclick="deleteData(${santri.id})" title="Hapus" class="w-8 h-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition">${svg(ICON_TRASH, 'w-4 h-4')}</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                const card = document.createElement('div');
+                card.className = 'rounded-2xl border border-slate-100 p-4 space-y-2.5';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="font-bold text-slate-800">${esc(santri.nama)}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${esc(santri.alamat) || '<span class="text-slate-300">Alamat belum diisi</span>'}</p>
+                        </div>
+                        ${SU.statusBadge(santri.kabur_izin)}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Denda</p>
+                            <p class="font-semibold text-slate-700">${denda || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Status Bayar</p>
+                            <div class="mt-0.5">${bayar}</div>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Pulang</p>
+                            <p class="font-semibold text-slate-700">${esc(SU.fmtTgl(santri.pulang)) || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                            <p class="text-slate-400">Balik</p>
+                            <div class="font-semibold text-slate-700">${SU.balikHtml(santri)}</div>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2 col-span-2">
+                            <p class="text-slate-400">Izin</p>
+                            <p class="font-semibold text-slate-700">${esc(santri.izin) || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg px-2.5 py-2 col-span-2">
+                            <p class="text-slate-400">Keterangan</p>
+                            <p class="font-semibold text-slate-700">${esc(santri.ket) || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="openEditModal(${santri.id})" class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 text-indigo-600 py-2 rounded-xl text-xs font-semibold hover:bg-indigo-100 transition">
+                            ${svg(ICON_EDIT, 'w-3.5 h-3.5')}
+                            Edit
+                        </button>
+                        <button onclick="deleteData(${santri.id})" class="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 text-rose-600 py-2 rounded-xl text-xs font-semibold hover:bg-rose-100 transition">
+                            ${svg(ICON_TRASH, 'w-3.5 h-3.5')}
+                            Hapus
+                        </button>
+                    </div>
+                `;
+                cardList.appendChild(card);
+            });
+
+            if (list.length > visibleCount) {
+                document.getElementById('loadMoreBtn').textContent = `Muat lebih banyak (${list.length - visibleCount} lagi)`;
+                loadMoreWrap.classList.remove('hidden');
+            }
+        }
+
+        function sortData(list) {
+            const sortBy = document.getElementById('sortSelect').value;
+            if (sortBy === 'default') return list;
+
+            const sorted = [...list];
+            const tgl = (s) => SU.parseTgl(s.pulang);
+            const byDate = (dir) => (a, b) => {
+                const x = tgl(a), y = tgl(b);
+                if (!x && !y) return 0;
+                if (!x) return 1;
+                if (!y) return -1;
+                return dir * (x - y);
+            };
+            const bool = (fn) => (a, b) => (fn(b) ? 1 : 0) - (fn(a) ? 1 : 0);
+
+            switch (sortBy) {
+                case 'pulang_terbaru': sorted.sort(byDate(-1)); break;
+                case 'pulang_terlama': sorted.sort(byDate(1)); break;
+                case 'belum_bayar': sorted.sort(bool(s => SU.bayarInfo(s).sisa > 0)); break;
+                case 'sudah_bayar': sorted.sort(bool(s => SU.bayarInfo(s).status === 'lunas')); break;
+                case 'sisa': sorted.sort((a, b) => SU.bayarInfo(b).sisa - SU.bayarInfo(a).sisa); break;
+                case 'belum_kembali': sorted.sort(bool(s => SU.belumKembali(s))); break;
+                case 'kabur': sorted.sort(bool(s => s.kabur_izin === 'Kabur')); break;
+                case 'izin': sorted.sort(bool(s => s.kabur_izin === 'Izin')); break;
+            }
+            return sorted;
+        }
+
+        function currentFilters() {
+            return {
+                q: document.getElementById('searchInput').value,
+                status: document.getElementById('filterStatus').value,
+                bayar: document.getElementById('filterBayar').value,
+                bulan: document.getElementById('filterBulan').value
+            };
+        }
+
+        function applyFilter(reset) {
+            if (reset === true) visibleCount = PAGE;
+            const f = currentFilters();
+            const aktif = !!(f.q.trim() || f.status || f.bayar || f.bulan);
+            const hasil = sortData(SU.filterData(allSantriData, f));
+            render(hasil);
+
+            document.getElementById('resetFilterBtn').classList.toggle('hidden', !aktif);
+            document.getElementById('resultInfo').textContent = allSantriData.length === 0 ? '' :
+                `Menampilkan ${Math.min(visibleCount, hasil.length)} dari ${hasil.length} data` + (aktif ? ` (total ${allSantriData.length})` : '');
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterBayar').value = '';
+            document.getElementById('filterBulan').value = '';
+            applyFilter(true);
+        }
+
+        function fillBulanOptions() {
+            const sel = document.getElementById('filterBulan');
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">Semua bulan</option>' +
+                SU.daftarBulan(allSantriData).map(k => `<option value="${k}">${SU.labelBulan(k)}</option>`).join('');
+            sel.value = [...sel.options].some(o => o.value === cur) ? cur : '';
+        }
+
+
+        // --- Rekap per santri (nama yang sama digabung) ---
+        function renderRekap() {
+            const hanyaSisa = document.getElementById('rekapHanyaSisa').checked;
+            let rows = SU.rekapSantri(allSantriData);
+            if (hanyaSisa) rows = rows.filter(r => r.sisa > 0);
+
+            const body = document.getElementById('rekapBody');
+            const empty = document.getElementById('rekapEmpty');
+            const total = document.getElementById('rekapTotal');
+
+            body.innerHTML = rows.map(r => `
+                <tr>
+                    <td class="p-3 font-semibold text-slate-800">${esc(r.nama)}${r.belumKembali ? `<span class="block text-[11px] font-normal text-slate-400">${r.belumKembali} catatan belum kembali</span>` : ''}</td>
+                    <td class="p-3 text-center text-slate-600">${r.catatan}</td>
+                    <td class="p-3 text-slate-600 whitespace-nowrap">${SU.rp(r.denda)}</td>
+                    <td class="p-3 text-emerald-600 whitespace-nowrap">${SU.rp(r.terbayar)}</td>
+                    <td class="p-3 font-semibold whitespace-nowrap ${r.sisa > 0 ? 'text-rose-600' : 'text-slate-400'}">${SU.rp(r.sisa)}</td>
+                </tr>`).join('');
+
+            empty.classList.toggle('hidden', rows.length > 0);
+            empty.textContent = allSantriData.length === 0 ? 'Belum ada data.' : 'Tidak ada santri dengan sisa denda.';
+            const sisa = rows.reduce((t, r) => t + r.sisa, 0);
+            total.textContent = rows.length ? `${rows.length} santri · total sisa denda ${SU.rp(sisa)}` : '';
+        }
+        document.getElementById('rekapHanyaSisa').addEventListener('change', renderRekap);
+
+        // --- Uang masuk per bulan (dari riwayat pembayaran) ---
+        function renderRekapBulan() {
+            const body = document.getElementById('rekapBulanBody');
+            const empty = document.getElementById('rekapBulanEmpty');
+            const total = document.getElementById('rekapBulanTotal');
+
+            const per = new Map();
+            allPembayaran.forEach(p => {
+                const k = String(p.tanggal || '').slice(0, 7);
+                if (!k) return;
+                const r = per.get(k) || { key: k, total: 0, n: 0 };
+                r.total += p.jumlah || 0;
+                r.n += 1;
+                per.set(k, r);
+            });
+            const rows = [...per.values()].sort((a, b) => b.key.localeCompare(a.key));
+            const maks = Math.max(1, ...rows.map(r => r.total));
+
+            body.innerHTML = rows.map(r => `
+                <div>
+                    <div class="flex items-baseline justify-between gap-2 text-sm">
+                        <span class="font-semibold text-slate-700">${SU.labelBulan(r.key)}</span>
+                        <span class="font-semibold text-emerald-600">${SU.rp(r.total)}</span>
+                    </div>
+                    <div class="h-2 rounded-full bg-slate-100 mt-1.5 overflow-hidden">
+                        <div class="h-full rounded-full bg-emerald-500" style="width:${Math.max(r.total / maks * 100, 2)}%"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">${r.n} kali bayar</p>
+                </div>`).join('');
+
+            empty.classList.toggle('hidden', rows.length > 0);
+            empty.textContent = payReady ? 'Belum ada pembayaran yang dicatat.' : 'Pencatatan cicilan belum aktif (lihat petunjuk di atas).';
+            total.textContent = rows.length ? `Total tercatat: ${SU.rp(rows.reduce((t, r) => t + r.total, 0))} dalam ${allPembayaran.length} pembayaran` : '';
+            document.getElementById('downloadBayarCsvBtn').classList.toggle('hidden', !payReady);
+        }
+
+        function downloadBayarCSV() {
+            if (!allPembayaran.length) {
+                toast('Belum ada riwayat pembayaran untuk diunduh.', 'error');
+                return;
+            }
+            const nama = new Map(allSantriData.map(s => [s.id, s.nama || '']));
+            const headers = ['Tanggal Bayar', 'Nama', 'Jumlah (Rp)', 'Catatan'];
+            const esc2 = (v) => {
+                const t = String(v ?? '');
+                return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+            };
+            const rows = [...allPembayaran]
+                .sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)))
+                .map(p => [p.tanggal, nama.get(p.santri_id) || '', p.jumlah, p.catatan || '']);
+            const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(esc2).join(',')).join('\r\n');
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `riwayat-bayar-${SU.toISO(SU.hariIni())}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast(`Riwayat pembayaran diunduh (${rows.length} baris).`);
+        }
+        document.getElementById('downloadBayarCsvBtn').addEventListener('click', downloadBayarCSV);
+
+        // --- Download CSV (seluruh data, tanggal tetap format YYYY-MM-DD agar mudah diolah) ---
+        function downloadCSV() {
+            if (!allSantriData || allSantriData.length === 0) {
+                toast('Tidak ada data untuk diunduh.', 'error');
+                return;
+            }
+
+            const headers = ['No', 'Nama', 'Alamat', 'Denda (Rp)', 'Terbayar (Rp)', 'Sisa (Rp)', 'Status Bayar', 'Tgl Lunas', 'Pulang', 'Izin', 'Balik', 'Kabur/Izin', 'Keterangan'];
+            const labelBayar = { none: '', belum: 'Belum Bayar', sebagian: 'Sebagian', lunas: 'Sudah Bayar' };
+
+            const escapeCsv = (val) => {
+                const str = String(val ?? '');
+                return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+            };
+
+            const rows = allSantriData.map((s, i) => {
+                const b = SU.bayarInfo(s);
+                return [
+                    i + 1,
+                    s.nama || '',
+                    s.alamat || '',
+                    s.denda || '',
+                    b.terbayar || '',
+                    b.sisa || '',
+                    labelBayar[b.status],
+                    s.tgl_lunas || '',
+                    s.pulang || '',
+                    s.izin || '',
+                    s.balik || '',
+                    s.kabur_izin || '',
+                    s.ket || ''
+                ];
+            });
+
+            const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\r\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data-santri-${SU.toISO(SU.hariIni())}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast(`Data berhasil diunduh (${allSantriData.length} baris).`);
+        }
+
+        document.getElementById('downloadCsvBtn').addEventListener('click', downloadCSV);
+
+        document.getElementById('searchInput').addEventListener('input', () => applyFilter(true));
+        ['sortSelect', 'filterStatus', 'filterBayar', 'filterBulan'].forEach(id =>
+            document.getElementById(id).addEventListener('change', () => applyFilter(true)));
+        document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+            visibleCount += PAGE;
+            applyFilter();
+        });
+
+        // --- Ambil data ---
+        async function loadData() {
+            const tbody = document.getElementById('santriTableBody');
+            if (allSantriData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center p-6 text-slate-400">Memuat data...</td></tr>';
+            }
+
+            const [sRes, pRes] = await Promise.all([
+                _supabase.from('santri').select('*').order('id', { ascending: false }),
+                _supabase.from('pembayaran').select('*').order('tanggal', { ascending: false }).order('id', { ascending: false })
+            ]);
+
+            if (sRes.error) {
+                tbody.innerHTML = '';
+                document.getElementById('emptyMessageText').textContent = 'Gagal memuat data: ' + sRes.error.message;
+                document.getElementById('emptyMessage').classList.remove('hidden');
+                return;
+            }
+
+            allSantriData = sRes.data || [];
+            payReady = !pRes.error;
+            allPembayaran = payReady ? (pRes.data || []) : [];
+            payBySantri = new Map();
+            allPembayaran.forEach(p => {
+                if (!payBySantri.has(p.santri_id)) payBySantri.set(p.santri_id, []);
+                payBySantri.get(p.santri_id).push(p);
+            });
+            document.getElementById('payInfoBanner').classList.toggle('hidden', payReady);
+
+            updateStats(allSantriData);
+            fillBulanOptions();
+            renderRekap();
+            renderRekapBulan();
+            applyFilter();
+            if (!document.getElementById('payModalBackdrop').classList.contains('hidden')) renderPayModal(false);
+        }
+
+        // Cadangan saat tabel pembayaran belum ada: tandai lunas / belum seperti sebelumnya
+        async function setLunas(id, lunasValue) {
+            const { error } = await _supabase.from('santri').update({ lunas: lunasValue }).eq('id', id);
+            if (error) {
+                toast('Gagal mengubah status bayar: ' + error.message, 'error');
+            } else {
+                toast(lunasValue ? 'Ditandai sudah bayar.' : 'Ditandai belum bayar.', 'info');
+                loadData();
+            }
+        }
+
+        async function deleteData(id) {
+            const adaRiwayat = (payBySantri.get(id) || []).length > 0;
+            const pesan = adaRiwayat
+                ? 'Data ini beserta riwayat pembayarannya akan dihapus permanen. Lanjutkan?'
+                : 'Apakah Anda yakin ingin menghapus data ini?';
+            if (confirm(pesan)) {
+                const { error } = await _supabase.from('santri').delete().eq('id', id);
+                if (error) {
+                    toast('Gagal menghapus data: ' + error.message, 'error');
+                } else {
+                    toast('Data berhasil dihapus.', 'info');
+                    loadData();
+                }
+            }
+        }
+
+        // --- Pembayaran / cicilan ---
+        // Ringkasan (dibayar, lunas, tgl_lunas) di tabel santri dihitung ulang setiap riwayat berubah,
+        // supaya halaman publik cukup membaca tabel santri.
+        async function sinkronBayar(santri, sumSebelum) {
+            const { data, error } = await _supabase.from('pembayaran').select('jumlah, tanggal').eq('santri_id', santri.id);
+            if (error) throw error;
+            const sumSesudah = sumJumlah(data);
+            const lama = Math.max(SU.dibayarEfektif(santri) - sumSebelum, 0); // pembayaran lama tanpa rincian
+            const dibayar = lama + sumSesudah;
+            const denda = santri.denda > 0 ? santri.denda : 0;
+            const lunas = denda > 0 && dibayar >= denda;
+            const terakhir = data.map(p => p.tanggal).sort().pop() || null;
+            const { error: e2 } = await _supabase.from('santri').update({
+                dibayar: dibayar,
+                lunas: lunas,
+                tgl_lunas: lunas ? (terakhir || santri.tgl_lunas || null) : null
+            }).eq('id', santri.id);
+            if (e2) throw e2;
+            return { dibayar, lunas };
+        }
+
+        function payTarget() {
+            const id = document.getElementById('payId').value;
+            return allSantriData.find(s => String(s.id) === String(id));
+        }
+
+        function openPayModal(id) {
+            if (!payReady) {
+                toast('Jalankan bagian PEMBARUAN 2 di supabase-setup.sql dulu untuk mencatat cicilan.', 'error');
+                return;
+            }
+            const s = allSantriData.find(x => x.id === id);
+            if (!s) return;
+            document.getElementById('payId').value = s.id;
+            document.getElementById('payTanggal').value = SU.toISO(SU.hariIni());
+            document.getElementById('payCatatan').value = '';
+            renderPayModal(true);
+            document.getElementById('payModalBackdrop').classList.remove('hidden');
+        }
+
+        function closePayModal() {
+            document.getElementById('payModalBackdrop').classList.add('hidden');
+        }
+
+        function renderPayModal(resetForm) {
+            const s = payTarget();
+            if (!s) { closePayModal(); return; }
+            const b = SU.bayarInfo(s);
+            const pays = payBySantri.get(s.id) || [];
+            const lama = Math.max(b.terbayar - sumJumlah(pays), 0);
+
+            document.getElementById('payNama').textContent = s.nama + (s.pulang ? ' · pulang ' + SU.fmtTgl(s.pulang) : '');
+
+            const kotak = (label, nilai, warna) => `
+                <div class="bg-slate-50 rounded-lg px-2.5 py-2">
+                    <p class="text-slate-400">${label}</p>
+                    <p class="font-semibold ${warna}">${SU.rp(nilai)}</p>
+                </div>`;
+            document.getElementById('paySummary').innerHTML = b.denda > 0 ? `
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    ${kotak('Denda', b.denda, 'text-slate-700')}
+                    ${kotak('Terbayar', b.terbayar, 'text-emerald-600')}
+                    ${kotak('Sisa', b.sisa, b.sisa > 0 ? 'text-rose-600' : 'text-slate-700')}
+                </div>
+                <div class="h-2 rounded-full bg-slate-200 overflow-hidden" role="progressbar" aria-valuenow="${b.persen}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="h-full rounded-full bg-emerald-500" style="width:${b.persen}%"></div>
+                </div>
+                <p class="text-xs text-slate-400">${b.status === 'lunas' ? 'Denda sudah lunas' + (s.tgl_lunas ? ' pada ' + SU.fmtTgl(s.tgl_lunas) : '') + '.' : b.persen + '% sudah dibayar.'}</p>`
+                : '<p class="text-sm text-slate-400">Santri ini belum punya denda. Isi denda lewat tombol Edit atau Pindai dulu.</p>';
+
+            document.getElementById('payForm').classList.toggle('hidden', b.denda === 0);
+
+            if (resetForm) document.getElementById('payJumlah').value = b.sisa > 0 ? b.sisa : '';
+
+            const baris = pays.map(p => `
+                <div class="flex items-center justify-between gap-2 bg-slate-50 rounded-xl px-3 py-2.5">
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-slate-700">${SU.rp(p.jumlah)}</p>
+                        <p class="text-[11px] text-slate-400 truncate">${esc(SU.fmtTgl(p.tanggal))}${p.catatan ? ' · ' + esc(p.catatan) : ''}</p>
+                    </div>
+                    <button type="button" data-del-pay="${p.id}" class="shrink-0 text-xs font-semibold text-rose-600 hover:underline">Hapus</button>
+                </div>`).join('');
+            const barisLama = lama > 0 ? `
+                <div class="bg-slate-50 rounded-xl px-3 py-2.5">
+                    <p class="text-sm font-semibold text-slate-700">${SU.rp(lama)}</p>
+                    <p class="text-[11px] text-slate-400">Pembayaran sebelum pencatatan rinci (tanpa tanggal)</p>
+                </div>` : '';
+            document.getElementById('payHistory').innerHTML = (baris + barisLama) ||
+                '<p class="text-sm text-slate-400">Belum ada pembayaran yang dicatat.</p>';
+        }
+
+        document.getElementById('closePayModalBtn').addEventListener('click', closePayModal);
+        document.getElementById('payModalBackdrop').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closePayModal();
+        });
+        document.getElementById('payIsiSisaBtn').addEventListener('click', () => {
+            const s = payTarget();
+            if (s) document.getElementById('payJumlah').value = SU.bayarInfo(s).sisa || '';
+        });
+
+        document.getElementById('payForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const s = payTarget();
+            if (!s) return;
+            const b = SU.bayarInfo(s);
+            const jumlah = parseInt(document.getElementById('payJumlah').value, 10);
+            const tanggal = document.getElementById('payTanggal').value;
+            const catatan = document.getElementById('payCatatan').value.trim() || null;
+
+            if (!(jumlah > 0)) { toast('Jumlah pembayaran harus lebih dari 0.', 'error'); return; }
+            if (!tanggal) { toast('Isi tanggal bayar.', 'error'); return; }
+            if (b.denda === 0) { toast('Santri ini belum punya denda.', 'error'); return; }
+            if (b.sisa === 0) {
+                if (!confirm('Denda sudah lunas. Tetap catat pembayaran tambahan?')) return;
+            } else if (jumlah > b.sisa) {
+                if (!confirm(`Jumlah ${SU.rp(jumlah)} melebihi sisa denda ${SU.rp(b.sisa)}. Tetap catat?`)) return;
+            }
+            const tgl = SU.parseTgl(tanggal);
+            if (tgl && tgl > SU.hariIni() && !confirm('Tanggal bayar ada di masa depan. Tetap catat?')) return;
+
+            const btn = document.getElementById('paySubmitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+            try {
+                const sumSebelum = sumJumlah(payBySantri.get(s.id));
+                const { error } = await _supabase.from('pembayaran').insert([{ santri_id: s.id, jumlah, tanggal, catatan }]);
+                if (error) throw error;
+                const hasil = await sinkronBayar(s, sumSebelum);
+                toast(hasil.lunas ? 'Pembayaran dicatat. Denda sudah lunas.' : 'Pembayaran dicatat.');
+                await loadData();
+                renderPayModal(true);
+            } catch (err) {
+                toast('Gagal mencatat pembayaran: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Catat pembayaran';
+            }
+        });
+
+        document.getElementById('payHistory').addEventListener('click', async (e) => {
+            const tombol = e.target.closest('[data-del-pay]');
+            if (!tombol) return;
+            const s = payTarget();
+            if (!s) return;
+            const p = (payBySantri.get(s.id) || []).find(x => String(x.id) === tombol.dataset.delPay);
+            if (!p) return;
+            if (!confirm(`Hapus pembayaran ${SU.rp(p.jumlah)} tanggal ${SU.fmtTgl(p.tanggal)}?`)) return;
+            try {
+                const sumSebelum = sumJumlah(payBySantri.get(s.id));
+                const { error } = await _supabase.from('pembayaran').delete().eq('id', p.id);
+                if (error) throw error;
+                await sinkronBayar(s, sumSebelum);
+                toast('Pembayaran dihapus.', 'info');
+                await loadData();
+                renderPayModal(true);
+            } catch (err) {
+                toast('Gagal menghapus pembayaran: ' + err.message, 'error');
+            }
+        });
+
+        // --- Edit modal ---
+        function openEditModal(id) {
+            const santri = allSantriData.find(s => s.id === id);
+            if (!santri) return;
+
+            document.getElementById('editId').value = santri.id;
+            document.getElementById('editNama').value = santri.nama || '';
+            document.getElementById('editAlamat').value = santri.alamat || '';
+            document.getElementById('editDenda').value = santri.denda || '';
+            document.getElementById('editPulang').value = santri.pulang || '';
+            document.getElementById('editIzin').value = santri.izin || '';
+            document.getElementById('editBalik').value = santri.balik || '';
+            document.getElementById('editBalik').min = santri.pulang || '';
+            document.getElementById('editKaburIzin').value = santri.kabur_izin || '';
+            document.getElementById('editKet').value = santri.ket || '';
+
+            document.getElementById('editModalBackdrop').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModalBackdrop').classList.add('hidden');
+            document.getElementById('editForm').reset();
+        }
+
+        document.getElementById('closeEditModalBtn').addEventListener('click', closeEditModal);
+        document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+        document.getElementById('editModalBackdrop').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeEditModal();
+        });
+
+        document.getElementById('editForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('editSubmitBtn');
+
+            const id = document.getElementById('editId').value;
+            const santri = allSantriData.find(s => String(s.id) === String(id));
+            const updatedData = {
+                nama: document.getElementById('editNama').value.replace(/\s+/g, ' ').trim(),
+                alamat: document.getElementById('editAlamat').value.trim() || null,
+                denda: parseInt(document.getElementById('editDenda').value) || null,
+                pulang: document.getElementById('editPulang').value || null,
+                izin: document.getElementById('editIzin').value.trim() || null,
+                balik: document.getElementById('editBalik').value || null,
+                kabur_izin: document.getElementById('editKaburIzin').value || null,
+                ket: document.getElementById('editKet').value.trim() || null
+            };
+
+            if (!konfirmasiValidasi(updatedData, id)) return;
+
+            // Jika denda diubah, status lunas ikut dihitung ulang dari total yang sudah dibayar
+            if (payReady && santri) {
+                const terbayar = SU.dibayarEfektif(santri);
+                const lunas = updatedData.denda > 0 && terbayar >= updatedData.denda;
+                updatedData.lunas = lunas;
+                const terakhir = (payBySantri.get(santri.id) || []).map(x => x.tanggal).sort().pop();
+                updatedData.tgl_lunas = lunas ? (santri.tgl_lunas || terakhir || SU.toISO(SU.hariIni())) : null;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+
+            const { error } = await _supabase.from('santri').update(updatedData).eq('id', id);
+
+            if (error) {
+                toast('Gagal menyimpan perubahan: ' + error.message, 'error');
+            } else {
+                toast('Perubahan berhasil disimpan!');
+                closeEditModal();
+                loadData();
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Simpan Perubahan';
+        });
+
+        // --- Realtime ---
+        _supabase
+            .channel('public:santri:admin')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'santri' }, () => loadData())
+            .subscribe();
+
+        _supabase
+            .channel('public:pembayaran:admin')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'pembayaran' }, () => loadData())
+            .subscribe();
+
+        // --- Init ---
+        (async function init() {
+            const session = await requireSession();
+            if (!session) return;
+
+            document.getElementById('userEmail').textContent = session.user.email;
+            document.getElementById('checkingAuth').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            loadData();
+        })();
+    </script>
+</body>
+</html>
